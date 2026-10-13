@@ -1,0 +1,93 @@
+{
+  "id": "mogi_mirim",
+  "nome": "Mogi Mirim",
+  "uf": "SP",
+  "exercicio": 2026,
+  "fonte_dados": "Valores tirados do requerimento-exemplo (revisao_iptu.docx) e do carnê 2026 (iptu.pdf), NÃO do texto oficial da LC 392/2025 — conferir.",
+  "normas": [
+    {
+      "id": "lc392",
+      "tipo": "Lei Complementar",
+      "numero": "392",
+      "ano": 2025,
+      "descricao": "Planta Genérica de Valores (PGV), com Anexos I a IV",
+      "artigos": {
+        "art. 3º, § 2º": "aplicação dos fatores correspondentes ao estado de conservação",
+        "art. 4º": "base de cálculo = Valor Venal do Imóvel = VVT + VVC",
+        "art. 5º, II": "VVC = AC × VM²C × FC",
+        "art. 9º": "alíquotas por faixa de valor venal (edificações)",
+        "art. 9º, I": "0,35% para valor venal até R$ 150.000,00",
+        "art. 11, parágrafo único": "contraditório e ampla defesa contra o lançamento da nova PGV",
+        "art. 32": "critérios de avaliação do padrão (características físicas, materiais, acabamentos, conservação...)",
+        "art. 32, § 1º": "residenciais — área, dormitórios, sanitários, pavimentos, cômodos, vagas, adicionais",
+        "art. 32, § 2º": "análise da quantidade e predominância dos elementos",
+        "art. 33": "remete ao Anexo IV (características por padrão)",
+        "Anexo I": "valores unitários dos terrenos",
+        "Anexo II": "valores unitários das construções (VM²C)",
+        "Anexo III, Tabela VI": "fator de conservação",
+        "Anexo IV": "características construtivas por padrão de acabamento"
+      }
+    },
+    {
+      "id": "ctm",
+      "tipo": "Lei",
+      "numero": "1.431",
+      "ano": 1983,
+      "descricao": "Código Tributário Municipal",
+      "artigos": {
+        "arts. 293 a 308": "processo administrativo tributário (impugnação)"
+      }
+    }
+  ],
+  "formula_vvc": "VVC = AC × VM²C × FC",
+  "ref_formula_vvc": "LC 392/2025, art. 5º, II",
+  "valores_construcao": {
+    "Casa": {
+      "Popular": {
+        "valor_m2": 946.3,
+        "descricao": "Construção residencial simples, com ambientes definidos, alvenaria, reboco, fachada normalmente pintada, cobertura comum, forro e esquadrias usuais."
+      }
+    }
+  },
+  "fatores_conservacao": {
+    "Bom": 1.0,
+    "Regular": 0.8,
+    "Mau": 0.5
+  },
+  "ref_fatores_conservacao": "LC 392/2025, Anexo III, Tabela VI",
+  "tributacao": {
+    "parcelas": 11,
+    "arredondamento": "por_parcela",
+    "faixas_predial": [
+      {
+        "ate": 150000.0,
+        "aliquota": 0.0035,
+        "ref": "LC 392/2025, art. 9º, I"
+      },
+      {
+        "ate": 300000.0,
+        "aliquota": 0.004,
+        "ref": "LC 392/2025, art. 9º"
+      }
+    ],
+    "lixo_valor_m2": 1.4,
+    "ref_lixo": "carnê 2026 (Valor M2 Lixo); base = área da construção"
+  },
+  "requerimento": {
+    "destinatario": [
+      "À PREFEITURA MUNICIPAL DE MOGI MIRIM",
+      "SECRETARIA MUNICIPAL DE FINANÇAS",
+      "CENTRAL DE ATENDIMENTO AO CIDADÃO - IPTU, ITBI E TSP"
+    ],
+    "titulo": "REQUERIMENTO DE REVISÃO DO IPTU, DO VALOR VENAL DA CONSTRUÇÃO E DA CLASSIFICAÇÃO CADASTRAL",
+    "template": null
+  },
+  "pendencias": [
+    "Conferir todos os valores e artigos no texto oficial da LC 392/2025",
+    "Anexo II completo (todas as tipologias e padrões, inclusive Telheiro)",
+    "Anexo IV completo (descrição de cada padrão, para a classificação)",
+    "Alíquotas acima de R$ 300.000,00 e alíquotas de terreno não edificado",
+    "Anexo I / fatores do terreno (zona 49), caso se queira contestar o VVT",
+    "Como e onde protocolar (presencial, online, prazos)"
+  ]
+}

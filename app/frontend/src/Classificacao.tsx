@@ -1,0 +1,167 @@
+import { useEffect, useRef, useState } from 'react'
+import { api, type Caso, type Confirmacao, type Municipio } from './api'
+import { poe } from './rotulos'
+
+/**
+ * Passo 3: tipologia, padrão e estado de conservação. A IA sugere e explica;
+ * cada critério subjetivo vira uma pergunta, e vale a resposta do proprietário.
+ */
+export default function Classificacao({ caso, municipio, iaDisponivel, aoMudar }: {
+  caso: Caso
+  municipio: Municipio | null
+  iaDisponivel: boolean
+  aoMudar: (c: Caso) => void
+}) {
+  const [trabalho, setTrabalho] = useState<{ id: string; segundos: number } | null>(null)
+  const [erro, setErro] = useState<string | null>(null)
+  const casoRef = useRef(caso)
+  casoRef.current = caso
+  const cl = caso.classificacao
+
+  useEffect(() => {
+    if (!trabalho) return
+    const t = setInterval(async () => {
+      try {
+        const r = await api.trabalho(trabalho.id)
+        if (r.status === 'rodando') { setTrabalho({ id: trabalho.id, segundos: r.segundos }); return }
+        clearInterval(t); setTrabalho(null)
+        if (r.status === 'erro') { setErro(r.erro ?? 'falha na classificação'); return }
+        const res = r.resultado!
+        const c = casoRef.current
+        const origem = { fonte: 'julgamento' as const, ref: `${res.uso.modelo}, a confirmar` }
+        aoMudar({
+          ...c,
+          classificacao: res.classificacao,
+          confirmacoes: res.confirmacoes,
+          alertas: [...c.alertas.filter((a) => !a.startsWith('Risco:')), ...res.alertas],
+          origens: {
+            ...c.origens,
+            'classificacao.tipologia': origem, 'classificacao.padrao': origem, 'classificacao.conservacao': origem,
+          },
+        })
+      } catch (e) { clearInterval(t); setTrabalho(null); setErro((e as Error).message) }
+    }, 3000)
+    return () => clearInterval(t)
+  }, [trabalho?.id])
+
+  async function sugerir() {
+    setErro(null)
+    try { const { id } = await api.classificar(caso); setTrabalho({ id, segundos: 0 }) } catch (e) { setErro((e as Error).message) }
+  }
+
+  function escolhe(campo: 'tipologia' | 'padrao' | 'conservacao', valor: string) {
+    aoMudar({
+      ...poe(caso, `classificacao.${campo}`, valor || null),
+      origens: { ...caso.origens, [`classificacao.${campo}`]: { fonte: 'usuario', ref: 'escolhido na tela' } },
+    })
+  }
+
+  function responde(q: Confirmacao, resposta: string) {
+    let novo: Caso = { ...caso, confirmacoes: caso.confirmacoes.map((x) => (x.id === q.id ? { ...x, resposta } : x)) }
+    // a resposta só altera o caso quando é um valor válido do campo (ex.: "Regular")
+    const campo = q.campo?.replace('classificacao.', '') as 'tipologia' | 'padrao' | 'conservacao' | undefined
+    const validos = campo === 'conservacao' ? municipio?.conservacao
+      : campo === 'padrao' ? Object.values(municipio?.padroes ?? {}).flat()
+      : campo === 'tipologia' ? Object.keys(municipio?.padroes ?? {}) : undefined
+    // o modelo às vezes enfeita a opção ("Regular (0,80)"): vale o nome do perfil no início
+    const valor = validos?.find((v) => resposta === v || resposta.startsWith(`${v} `) || resposta.startsWith(`${v}(`))
+    if (q.campo && valor) {
+      novo = { ...poe(novo, q.campo, valor), origens: { ...novo.origens, [q.campo]: { fonte: 'usuario', ref: 'confirmado na tela' } } }
+    }
+    aoMudar(novo)
+  }
+
+  const padroes = municipio?.padroes?.[cl.tipologia ?? ''] ?? []
+  const pendentes = caso.confirmacoes.filter((q) => !q.resposta).length
+
+  return (
+    <section className="cartao">
+      <h2>3. Classificação do imóvel</h2>
+      {!municipio && <p className="aviso">Município sem perfil cadastrado: não há tabela de padrões para classificar.</p>}
+      {municipio && (
+        <>
+          <div className="linha">
+            <label>Tipologia{' '}
+              <select value={cl.tipologia ?? ''} onChange={(e) => escolhe('tipologia', e.target.value)}>
+                <option value="">—</option>
+                {Object.keys(municipio.padroes).map((t) => <option key={t}>{t}</option>)}
+              </select>
+            </label>
+            <label>Padrão{' '}
+              <select value={cl.padrao ?? ''} onChange={(e) => escolhe('padrao', e.target.value)}>
+                <option value="">—</option>
+                {padroes.map((p) => <option key={p}>{p}</option>)}
+              </select>
+            </label>
+            <label>Conservação{' '}
+              <select value={cl.conservacao ?? ''} onChange={(e) => escolhe('conservacao', e.target.value)}>
+                <option value="">—</option>
+                {municipio.conservacao.map((c) => <option key={c}>{c}</option>)}
+              </select>
+            </label>
+            <button className="primario" onClick={sugerir} disabled={!iaDisponivel || !!trabalho || !caso.laudo?.ambientes.length}
+              title="Lê as observações do laudo e sugere o enquadramento. Leva 1–2 minutos e custa ~US$ 0,20.">
+              {trabalho ? `Analisando o laudo… ${trabalho.segundos} s` : cl.caracteristicas.length ? 'Sugerir de novo (IA)' : 'Sugerir pelo laudo (IA)'}
+            </button>
+          </div>
+          {padroes.length <= 1 && cl.tipologia && (
+            <p className="fraco">O perfil de {municipio.nome} só tem {padroes.length} padrão para {cl.tipologia}: a lei (Anexos II e IV) ainda não foi levantada por completo.</p>
+          )}
+        </>
+      )}
+      {erro && <p className="erro">{erro}</p>}
+
+      {cl.caracteristicas.length > 0 && (
+        <>
+          <p>
+            Sugestão: <b>{cl.tipologia} {cl.padrao}, estado {cl.conservacao}</b>
+            {cl.confianca && <> · confiança {cl.confianca}</>}
+          </p>
+          <details>
+            <summary>Características construtivas ({cl.caracteristicas.length})</summary>
+            <Quadro linhas={cl.caracteristicas} />
+          </details>
+          <details>
+            <summary>Estado de conservação ({cl.estado.length})</summary>
+            <Quadro linhas={cl.estado} />
+          </details>
+          {cl.areas_acessorias && <details><summary>Áreas acessórias</summary><p>{cl.areas_acessorias}</p></details>}
+          {cl.pontos_fracos.length > 0 && (
+            <details open>
+              <summary>Pontos fracos do pedido ({cl.pontos_fracos.length})</summary>
+              <ul>{cl.pontos_fracos.map((p, i) => <li key={i}>{p}</li>)}</ul>
+            </details>
+          )}
+        </>
+      )}
+
+      {caso.confirmacoes.length > 0 && (
+        <div className="confirmacoes">
+          <h3>Confirme {pendentes ? `(${pendentes} pendente${pendentes > 1 ? 's' : ''})` : '✓'}</h3>
+          {caso.confirmacoes.map((q) => (
+            <div key={q.id} className={`pergunta ${q.resposta ? 'respondida' : ''}`}>
+              <p className="enunciado">{q.pergunta}</p>
+              {q.opcoes.map((o) => (
+                <label key={o} className="opcao">
+                  <input type="radio" name={q.id} checked={q.resposta === o} onChange={() => responde(q, o)} />
+                  {' '}{o}{o === q.sugestao && <span className="tag sugestao">sugerido</span>}
+                </label>
+              ))}
+              <p className="fraco">{q.justificativa}</p>
+              {q.impacto && <p className="impacto">{q.impacto}</p>}
+            </div>
+          ))}
+        </div>
+      )}
+    </section>
+  )
+}
+
+function Quadro({ linhas }: { linhas: { elemento: string; evidencias: string; conclusao: string }[] }) {
+  return (
+    <table>
+      <thead><tr><th>Elemento</th><th>Evidências do laudo</th><th>Conclusão</th></tr></thead>
+      <tbody>{linhas.map((l, i) => <tr key={i}><td className="nome">{l.elemento}</td><td>{l.evidencias}</td><td>{l.conclusao}</td></tr>)}</tbody>
+    </table>
+  )
+}
