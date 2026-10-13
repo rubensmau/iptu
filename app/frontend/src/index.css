@@ -95,3 +95,13 @@ details table { margin-top: 8px; font-size: 13px; }
   table { font-size: 13px; }
   .cartao { padding: 14px; overflow-x: auto; }
 }
+
+.vagas { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 12px; margin: 12px 0; }
+.vaga { border: 1px dashed var(--linha); border-radius: 8px; padding: 12px 14px; }
+.vaga.preenchida { border-style: solid; border-color: var(--verde); background: #fbfdfb; }
+.vaga h3 { margin: 0 0 2px; color: var(--tinta); }
+.vaga .fraco { margin: 0 0 10px; }
+label.escolher { display: inline-block; padding: 7px 12px; border: 1px solid var(--azul); border-radius: 6px;
+                 color: var(--azul); cursor: pointer; font-size: 14px; }
+label.escolher:hover { background: var(--azul-claro); }
+.arquivo { font-size: 13px; margin-top: 8px; word-break: break-word; }
