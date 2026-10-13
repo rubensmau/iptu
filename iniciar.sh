@@ -6,4 +6,6 @@
 set -euo pipefail
 cd "$(dirname "$0")/app/backend"
 export STATIC_DIR=../frontend/dist
+# VPS de 1,9 GB compartilhada com o Dror: limita o heap para não puxar os outros apps para o swap
+export NODE_OPTIONS=--max-old-space-size=256
 exec node_modules/.bin/tsx src/server.ts
