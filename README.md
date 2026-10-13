@@ -28,7 +28,10 @@ Nada de processo Python na VPS — RAM de 1,9 GB.
 | `casos/*.json` | casos reais — **fora do git** (CPF, endereço) |
 | `docs/analise_exemplo_mogi_mirim.md` | de onde veio cada dado do requerimento-exemplo |
 
-PDFs, .docx e `casos/` ficam fora do git de propósito (dados pessoais).
+PDFs, .docx, `casos/` e `.env` ficam fora do git de propósito (dados pessoais e segredos).
+
+Repositório: `git@github.com:rubensmau/iptu.git` (privado). Produção: VPS, `~/iptu`,
+porta 8090 (`bash ~/iptu_teste.sh start|stop|status|log`), login HTTP Basic do próprio app.
 
 ## Rodar a tela
 
