@@ -40,6 +40,13 @@ PDFs, .docx, `casos/` e `.env` ficam fora do git de propósito (dados pessoais e
 Repositório: `git@github.com:rubensmau/iptu.git` (privado). Produção: VPS, `~/iptu`,
 porta 8090 (`bash ~/iptu_teste.sh start|stop|status|log`), login HTTP Basic do próprio app.
 
+## Backup
+
+Entra nos dois backups pessoais sem etapa própria: `~/backup.sh` copia este diretório (inclusive
+`casos/`, PDFs e `.docx`, que ficam fora do git) e o `~/iptu` da VPS; o
+`~/pessoal/dror/backup_arquivos/backup_vps_apps.sh` leva o `~/iptu` da VPS com o `.env` e confere
+que ele está no tarball. Detalhes em `~/BACKUP.md`, seção "App de revisão de IPTU".
+
 ## Rodar a tela
 
 ```bash
