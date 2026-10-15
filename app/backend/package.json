@@ -10,6 +10,7 @@
     "extrai": "tsx src/extrai.ts",
     "simula": "tsx src/simula.ts",
     "classifica": "tsx src/classifica.ts",
+    "requerimento": "tsx src/gera-requerimento.ts",
     "typecheck": "tsc --noEmit"
   },
   "devDependencies": {
@@ -21,6 +22,7 @@
   "dependencies": {
     "@anthropic-ai/sdk": "^0.133.0",
     "cors": "^2.8.6",
+    "docx": "9.8.1",
     "dotenv": "^18.0.7",
     "express": "^5.3.0",
     "tsx": "^4.23.15",

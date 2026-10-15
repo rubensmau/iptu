@@ -19,6 +19,7 @@ const cenario = {
   padrao: padrao ?? cl.padrao ?? '',
   conservacao: conservacao ?? cl.conservacao ?? '',
   ...(area ? { area_m2: Number(area.replace(',', '.')) } : {}),
+  acessorias: cl.acessorias,
 };
 if (!cenario.padrao || !cenario.conservacao) {
   console.error('caso sem classificação: informe --padrao e --conservacao');

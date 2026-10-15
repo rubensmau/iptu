@@ -53,6 +53,9 @@ export interface Tributacao {
   ref_lixo: string | null;
 }
 
+export type RefRequerimento =
+  | 'lei_pgv' | 'formula' | 'padrao' | 'conservacao' | 'valores' | 'aliquota' | 'efeito' | 'contraditorio' | 'avaliacao';
+
 export interface PerfilMunicipio {
   id: string;
   nome: string;
@@ -71,6 +74,9 @@ export interface PerfilMunicipio {
     destinatario: string[]; // linhas do cabeçalho
     titulo: string;
     template: string | null; // .docx modelo
+    // citações usadas nos pedidos ("padrao": "arts. 32 e 33 e Anexo IV da LC nº 392/2025"...)
+    refs: Partial<Record<RefRequerimento, string>>;
+    fundamentacao: string[]; // parágrafos da seção de fundamentação legal
   };
   pendencias: string[]; // o que falta levantar no perfil
 }
@@ -149,6 +155,21 @@ export interface ElementoAvaliado {
   conclusao: string;
 }
 
+/**
+ * Parte da construção enquadrada à parte do corpo principal (garagem, área de
+ * serviço...): a proposta é classificar por ambiente e somar o valor de cada
+ * bloco, proporcional aos m². O laudo de locação não traz m² por ambiente —
+ * a área vem do proprietário.
+ */
+export interface BlocoConstrucao {
+  descricao: string;         // "Garagem", "Área de serviço"
+  ambientes: string | null;  // ambientes do laudo ("2. Garagem; 11. Área de Serviço")
+  tipologia: string;
+  padrao: string;
+  conservacao: string;
+  area_m2: number | null;
+}
+
 export interface Classificacao {
   tipologia: string | null;
   padrao: string | null;
@@ -156,6 +177,7 @@ export interface Classificacao {
   caracteristicas: ElementoAvaliado[]; // quadro 3.1 do requerimento
   estado: ElementoAvaliado[];          // quadro 3.2
   areas_acessorias: string | null;     // garagem, área de serviço → Telheiro?
+  acessorias?: BlocoConstrucao[];      // blocos enquadrados à parte; a área deles sai do corpo principal
   confianca: 'alta' | 'media' | 'baixa' | null;
   pontos_fracos: string[]; // o que a prefeitura pode usar contra o pedido
 }

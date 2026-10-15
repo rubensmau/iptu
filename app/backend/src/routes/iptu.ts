@@ -4,6 +4,8 @@ import { cenarios, simular, valorImplicito, type Cenario } from '../calc.js';
 import { classificar, type ResultadoClassificacao } from '../classificar.js';
 import { montarCaso } from '../cruzamento.js';
 import { extrairDocumento } from '../extrair/index.js';
+import { lacunas } from '../lacunas.js';
+import { gerarRequerimento, nomeRequerimento } from '../requerimento.js';
 import { perfil, perfilPorCidade, perfis } from '../municipios.js';
 import type { Caso, Extracao } from '../tipos.js';
 
@@ -55,6 +57,7 @@ router.post('/simular', express.json({ limit: '5mb' }), (req, res) => {
     padrao: req.body.cenario?.padrao ?? c.padrao ?? '',
     conservacao: req.body.cenario?.conservacao ?? c.conservacao ?? '',
     ...(req.body.cenario?.area_m2 ? { area_m2: Number(req.body.cenario.area_m2) } : {}),
+    acessorias: c.acessorias,
   };
   try {
     res.json({
@@ -64,6 +67,28 @@ router.post('/simular', express.json({ limit: '5mb' }), (req, res) => {
     });
   } catch (e) {
     res.status(422).json({ error: (e as Error).message });
+  }
+});
+
+// O que falta para protocolar; a tela mostra no passo 5.
+router.post('/lacunas', express.json({ limit: '5mb' }), (req, res) => {
+  const caso: Caso = req.body?.caso;
+  if (!caso) return res.status(400).json({ error: 'envie o caso' });
+  res.json({ lacunas: lacunas(caso, perfil(caso.municipio)) });
+});
+
+// Rascunho do requerimento em .docx, com as lacunas destacadas.
+router.post('/requerimento', express.json({ limit: '5mb' }), async (req, res) => {
+  const caso: Caso = req.body?.caso;
+  const p = caso && perfil(caso.municipio);
+  if (!p) return res.status(422).json({ error: 'município sem perfil cadastrado: não há modelo de requerimento' });
+  try {
+    const { buffer } = await gerarRequerimento(caso, p);
+    res.set('Content-Type', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document');
+    res.set('Content-Disposition', `attachment; filename="${nomeRequerimento(caso)}"`);
+    res.send(buffer);
+  } catch (e) {
+    res.status(500).json({ error: `falha ao gerar o requerimento: ${(e as Error).message}` });
   }
 });
 

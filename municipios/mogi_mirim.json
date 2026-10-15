@@ -3,29 +3,36 @@
   "nome": "Mogi Mirim",
   "uf": "SP",
   "exercicio": 2026,
-  "fonte_dados": "Valores tirados do requerimento-exemplo (revisao_iptu.docx) e do carnê 2026 (iptu.pdf), NÃO do texto oficial da LC 392/2025 — conferir.",
+  "fonte_dados": "Texto oficial da LC 392/2025 e Anexos I a IV, baixados do portal da Prefeitura (mogimirim.sp.gov.br/legislacao/view/30875) em 15/10/2026; taxa de lixo e parcelas tiradas do carnê 2026.",
   "normas": [
     {
       "id": "lc392",
       "tipo": "Lei Complementar",
       "numero": "392",
       "ano": 2025,
-      "descricao": "Planta Genérica de Valores (PGV), com Anexos I a IV",
+      "descricao": "Planta Genérica de Valores (PGV), com Anexos I a IV; vigência a partir de 1º/01/2026",
       "artigos": {
-        "art. 3º, § 2º": "aplicação dos fatores correspondentes ao estado de conservação",
-        "art. 4º": "base de cálculo = Valor Venal do Imóvel = VVT + VVC",
-        "art. 5º, II": "VVC = AC × VM²C × FC",
-        "art. 9º": "alíquotas por faixa de valor venal (edificações)",
-        "art. 9º, I": "0,35% para valor venal até R$ 150.000,00",
-        "art. 11, parágrafo único": "contraditório e ampla defesa contra o lançamento da nova PGV",
-        "art. 32": "critérios de avaliação do padrão (características físicas, materiais, acabamentos, conservação...)",
-        "art. 32, § 1º": "residenciais — área, dormitórios, sanitários, pavimentos, cômodos, vagas, adicionais",
-        "art. 32, § 2º": "análise da quantidade e predominância dos elementos",
-        "art. 33": "remete ao Anexo IV (características por padrão)",
-        "Anexo I": "valores unitários dos terrenos",
-        "Anexo II": "valores unitários das construções (VM²C)",
-        "Anexo III, Tabela VI": "fator de conservação",
-        "Anexo IV": "características construtivas por padrão de acabamento"
+        "art. 3º": "fatores de correção do terreno: localização (FL), gleba (FG), alta tensão (FT), alagamento/APP (FA)",
+        "art. 3º, § 2º": "no valor venal das construções aplicam-se os fatores de estado de conservação da Tabela VI do Anexo III",
+        "art. 4º": "base de cálculo = Valor Venal do Imóvel (VVI) = VVT + VVC, apurados pela metodologia da lei",
+        "art. 5º, I": "VVT = ATT × VM²T × FL × FG × FT × FA (VM²T por face de quadra, Anexo I)",
+        "art. 5º, II": "VVC = AC × VM²C × FC (VM²C do Anexo II; FC da Tabela VI do Anexo III)",
+        "art. 9º": "alíquotas por faixa de valor venal, para o imposto predial e o territorial: 0,35% até R$ 150 mil; 0,40% até R$ 300 mil; 0,45% até R$ 450 mil; 0,50% até R$ 600 mil; 0,55% acima; 0,40% nas Zonas Predominantemente Industriais",
+        "art. 10": "parcelamento em até 12 prestações; descontos de 10%, 7% ou 5% à vista",
+        "art. 11": "atualização da PGV pelo Executivo conforme a EC 132/2023, observados critérios fixados na lei",
+        "art. 11, parágrafo único": "contraditório e ampla defesa contra o lançamento decorrente da atualização da PGV, nos termos dos arts. 293 a 308 do CTM",
+        "art. 12, § 2º": "para 2026 a PGV não sofre atualização monetária",
+        "art. 25": "todo processo avaliatório segue, no que couber, a NBR da ABNT de avaliação de imóveis urbanos",
+        "art. 27": "modificação cadastral que reduza o imposto só tem efeito no exercício seguinte ao da comunicação, salvo erro inequívoco da Administração ou impugnação tempestiva do lançamento",
+        "art. 32": "subsídios para classificar o padrão: características físicas, arquitetônicas, técnicas, construtivas e funcionais, idade, estado de conservação, materiais, acabamentos, ventilação, iluminação, conforto, salubridade, segurança, robustez, localização e infraestrutura",
+        "art. 32, § 1º": "residenciais: área total edificada, número e área de suítes e dormitórios, sanitários, pavimentos, demais cômodos, vagas e itens adicionais (piscina, churrasqueira...)",
+        "art. 32, § 2º": "o padrão é definido pela quantidade e predominância desses elementos no conjunto do imóvel",
+        "art. 33": "as características construtivas de cada tipologia estão no Anexo IV",
+        "Anexo I": "valor unitário do m² de terreno por face de quadra",
+        "Anexo II": "valor unitário do m² da construção por tipo e padrão",
+        "Anexo III, Tabelas I a V": "fatores de correção dos terrenos (FL, FG, FT, FA); Tabela III corrigida por errata",
+        "Anexo III, Tabela VI": "fator estado de conservação: Bom 1,00; Regular 0,80; Mau 0,50",
+        "Anexo IV": "características construtivas correlacionadas ao padrão de acabamento, por tipologia"
       }
     },
     {
@@ -37,16 +44,87 @@
       "artigos": {
         "arts. 293 a 308": "processo administrativo tributário (impugnação)"
       }
+    },
+    {
+      "id": "cf",
+      "tipo": "Constituição Federal",
+      "numero": "art. 156, § 1º, III",
+      "ano": 1988,
+      "descricao": "redação da EC 132/2023",
+      "artigos": {
+        "art. 156, § 1º, III": "o IPTU pode ter a base de cálculo atualizada pelo Executivo, conforme critérios estabelecidos em lei municipal"
+      }
     }
   ],
   "formula_vvc": "VVC = AC × VM²C × FC",
   "ref_formula_vvc": "LC 392/2025, art. 5º, II",
   "valores_construcao": {
     "Casa": {
+      "Luxo": {
+        "valor_m2": 2889.81,
+        "descricao": "Anexo IV, 1.5: construções isoladas no lote, às vezes em terrenos acima do usual, com projeto arquitetônico por vezes exclusivo, ambientes amplos e materiais e acabamentos personalizados. Salas para quatro ambientes ou mais, lavabo, copa, adega, despensa, duas ou mais suítes com closet (uma máster), dependências de empregados, garagem para três ou mais veículos, área de lazer completa (piscina, spa, sauna, quadras, churrasqueira). Cobertura em laje maciça com proteção térmica ou telhas de cerâmica ou ardósia. Fachadas com tratamento arquitetônico especial."
+      },
+      "Fino": {
+        "valor_m2": 1934.31,
+        "descricao": "Anexo IV, 1.4: construções normalmente isoladas no lote, com projeto arquitetônico diferenciado e materiais de boa qualidade. Salas para três ambientes ou mais, lavabo, sala de almoço, copa, cozinha com despensa, três ou mais dormitórios (ao menos uma suíte), por vezes dependências de empregados e garagem para no mínimo dois veículos. Paisagismo, podendo ter piscina, quadra ou churrasqueira. Cobertura em laje impermeabilizada com projeto específico ou telhas de cerâmica ou ardósia. Fachadas pintadas ou com revestimentos especiais (pedra, cerâmica de boa qualidade, vidro temperado)."
+      },
+      "Médio": {
+        "valor_m2": 1330.83,
+        "descricao": "Anexo IV, 1.3: construções térreas ou assobradadas, isoladas ou geminadas, com alguma preocupação com o projeto, principalmente nos revestimentos internos. Geralmente sala, dois ou três dormitórios (eventualmente uma suíte), banheiro, cozinha e abrigo ou garagem para um ou mais veículos. Alvenaria revestida interna e externamente. Fachadas pintadas, usualmente com pedras, pastilhas ou equivalentes. Cobertura em laje impermeabilizada ou telhas metálicas ou cerâmicas sobre madeira, com forro. Esquadrias de padrão médio, de alumínio ou madeira. Áreas externas cimentadas ou com cerâmica comum, com ajardinamento."
+      },
       "Popular": {
         "valor_m2": 946.3,
-        "descricao": "Construção residencial simples, com ambientes definidos, alvenaria, reboco, fachada normalmente pintada, cobertura comum, forro e esquadrias usuais."
+        "descricao": "Anexo IV, 1.2: construções térreas ou assobradadas, podendo ser geminadas, com projeto padrão ou sem projeto. Geralmente sala, um ou mais dormitórios, banheiro, cozinha, podendo ter dependências externas de serviço e cobertura simples para um veículo. Alvenaria de tijolos ou blocos revestida interna e externamente por reboco. Fachadas normalmente pintadas. Cobertura em laje pré-moldada impermeabilizada ou telhas de fibrocimento, zinco ou barro sobre estrutura de madeira, COM FORRO. Esquadrias comuns. Áreas externas sem tratamento especial, eventualmente cimentadas ou com caco de cerâmica ou cerâmica comum."
+      },
+      "Precário": {
+        "valor_m2": 501.67,
+        "descricao": "Anexo IV, 1.1: construções aparentemente sem projeto, normalmente sem mão de obra qualificada, muitas vezes feitas em etapas, com cômodos sem funções definidas. Materiais reaproveitados ou de qualidade inferior, geralmente autoconstrução, com pé-direito abaixo do legal e deficiências construtivas evidentes (desaprumos, desníveis, falta de arremates). Cobertura em laje pré-moldada ou telhas de fibrocimento, zinco ou cerâmicas sobre madeiramento não estruturado, SEM FORRO. Fachadas sem revestimento ou com acabamento simples. Áreas externas em terra batida, cimentado rústico ou sobras de materiais."
       }
+    },
+    "Apartamento": {
+      "Luxo": { "valor_m2": 3766.81, "descricao": "Anexo IV, 2.4: edifícios de linhas arquitetônicas exclusivas, materiais excepcionalmente nobres, circulação social e de serviço independentes, unidades amplas (uma ou duas por andar), suíte com closet, normalmente duas ou mais vagas." },
+      "Fino": { "valor_m2": 2553.73, "descricao": "Anexo IV, 2.3: edifícios com projeto diferenciado, elevador, hall social amplo, guarita, área de lazer; unidades com pelo menos três dormitórios, dependências de empregada e ao menos uma vaga; revestimentos especiais e esquadrias de alto padrão." },
+      "Médio": { "valor_m2": 1964.97, "descricao": "Anexo IV, 2.2: três ou mais pavimentos, alguma preocupação com o projeto, podem ter elevadores de padrão médio; unidades com sala para dois ambientes, dois ou três dormitórios e uma vaga; acabamentos de boa qualidade, porém padronizados." },
+      "Popular": { "valor_m2": 1405.65, "descricao": "Anexo IV, 2.1: três ou mais pavimentos, sem elevador, projeto simples, sem portaria; fachadas pintadas, esquadrias de baixo padrão; sala, um ou mais dormitórios, banheiro, cozinha e área de serviço; acabamentos econômicos; normalmente até 50 m² privativos." }
+    },
+    "Escritório": {
+      "Luxo": { "valor_m2": 2406.54, "descricao": "Anexo IV, 3.4" },
+      "Fino": { "valor_m2": 1891.38, "descricao": "Anexo IV, 3.3" },
+      "Médio": { "valor_m2": 1332.06, "descricao": "Anexo IV, 3.2" },
+      "Popular": { "valor_m2": 964.09, "descricao": "Anexo IV, 3.1" }
+    },
+    "Loja": {
+      "Fino": { "valor_m2": 1780.99, "descricao": "Anexo IV, 4.3" },
+      "Médio": { "valor_m2": 1192.23, "descricao": "Anexo IV, 4.2" },
+      "Popular": { "valor_m2": 735.94, "descricao": "Anexo IV, 4.1" }
+    },
+    "Galpão": {
+      "Médio": { "valor_m2": 1204.5, "descricao": "Anexo IV, 5.2: um pavimento ou mais, pé-direito elevado, vãos normalmente acima de dez metros, laterais fechadas." },
+      "Popular": { "valor_m2": 635.37, "descricao": "Anexo IV, 5.1: um pavimento, vãos normalmente abaixo de dez metros, laterais fechadas, cobertura de fibrocimento ou metálica sem forro, piso de concreto simples." }
+    },
+    "Telheiro": {
+      "Popular": {
+        "valor_m2": 269.85,
+        "descricao": "Anexo IV, 6.2: construção constituída apenas de cobertura e seus apoios. Telhas de barro, fibrocimento ou metálicas sobre estrutura de madeira, alvenaria, pilares de concreto ou estrutura metálica, em vãos médios com pé-direito elevado; com ou sem forro; SEM FECHAMENTOS LATERAIS; piso em concreto simples ou eventualmente estruturado."
+      },
+      "Precário": {
+        "valor_m2": 122.66,
+        "descricao": "Anexo IV, 6.1: construção constituída apenas de cobertura e seus apoios. Telhas de barro, metálicas ou fibrocimento apoiadas sobre peças simples, geralmente de madeira, em vãos reduzidos e pé-direito reduzido; sem forro; sem fechamentos laterais; piso em concreto simples ou chão batido. Pode usar muros ou paredes de outras edificações como apoio."
+      }
+    },
+    "Indústria": {
+      "Fino": { "valor_m2": 1398.29, "descricao": "Anexo IV, 7.3" },
+      "Médio": { "valor_m2": 1003.75, "descricao": "Anexo IV, 7.2" },
+      "Popular": { "valor_m2": 529.47, "descricao": "Anexo IV, 7.1" }
+    },
+    "Especial": {
+      "Fino": { "valor_m2": 2049.74, "descricao": "Anexo IV, 8.3" },
+      "Médio": { "valor_m2": 1573.5, "descricao": "Anexo IV, 8.2" },
+      "Popular": { "valor_m2": 1097.83, "descricao": "Anexo IV, 8.1" }
+    },
+    "Alta Tecnologia": {
+      "Fino": { "valor_m2": 17336.18, "descricao": "Anexo IV, 9.2" },
+      "Médio": { "valor_m2": 15372.97, "descricao": "Anexo IV, 9.1" }
     }
   },
   "fatores_conservacao": {
@@ -59,16 +137,11 @@
     "parcelas": 11,
     "arredondamento": "por_parcela",
     "faixas_predial": [
-      {
-        "ate": 150000.0,
-        "aliquota": 0.0035,
-        "ref": "LC 392/2025, art. 9º, I"
-      },
-      {
-        "ate": 300000.0,
-        "aliquota": 0.004,
-        "ref": "LC 392/2025, art. 9º"
-      }
+      { "ate": 150000.0, "aliquota": 0.0035, "ref": "LC 392/2025, art. 9º, I" },
+      { "ate": 300000.0, "aliquota": 0.004, "ref": "LC 392/2025, art. 9º, II" },
+      { "ate": 450000.0, "aliquota": 0.0045, "ref": "LC 392/2025, art. 9º, III" },
+      { "ate": 600000.0, "aliquota": 0.005, "ref": "LC 392/2025, art. 9º, IV" },
+      { "ate": null, "aliquota": 0.0055, "ref": "LC 392/2025, art. 9º, V" }
     ],
     "lixo_valor_m2": 1.4,
     "ref_lixo": "carnê 2026 (Valor M2 Lixo); base = área da construção"
@@ -80,14 +153,33 @@
       "CENTRAL DE ATENDIMENTO AO CIDADÃO - IPTU, ITBI E TSP"
     ],
     "titulo": "REQUERIMENTO DE REVISÃO DO IPTU, DO VALOR VENAL DA CONSTRUÇÃO E DA CLASSIFICAÇÃO CADASTRAL",
-    "template": null
+    "template": null,
+    "refs": {
+      "lei_pgv": "Lei Complementar Municipal nº 392/2025",
+      "formula": "art. 5º, II, da LC nº 392/2025",
+      "padrao": "arts. 32 e 33 e Anexo IV da LC nº 392/2025",
+      "conservacao": "art. 3º, § 2º, art. 5º, II, e Tabela VI do Anexo III da LC nº 392/2025",
+      "valores": "Anexo II da LC nº 392/2025",
+      "aliquota": "art. 9º da LC nº 392/2025",
+      "efeito": "art. 27 da LC nº 392/2025",
+      "contraditorio": "art. 11, parágrafo único, da LC nº 392/2025 e arts. 293 a 308 da Lei Municipal nº 1.431/1983 (CTM)",
+      "avaliacao": "art. 25 da LC nº 392/2025 (NBR da ABNT de avaliação de imóveis urbanos)"
+    },
+    "fundamentacao": [
+      "A Lei Complementar Municipal nº 392/2025 instituiu a Planta Genérica de Valores e integra, em seus Anexos I a IV, os valores unitários dos terrenos, os valores unitários das construções, os fatores corretivos e as características construtivas correlacionadas ao padrão de acabamento.",
+      "Nos termos do art. 4º, a base de cálculo do IPTU é o Valor Venal do Imóvel, composto pela soma do Valor Venal do Terreno e do Valor Venal da Construção, apurados segundo a metodologia integrante da própria lei.",
+      "O art. 5º, inciso II, determina que o Valor Venal da Construção seja apurado pela fórmula VVC = AC × VM²C × FC, em que AC é a área construída, VM²C é o valor unitário do Anexo II, conforme o tipo e o padrão da construção, e FC é o fator de conservação da Tabela VI do Anexo III. O art. 3º, § 2º, determina a aplicação desse fator, cujos coeficientes são: Bom = 1,00; Regular = 0,80; Mau = 0,50.",
+      "O art. 32 determina que o padrão seja avaliado conforme as características físicas, arquitetônicas, técnicas, construtivas e funcionais, a idade, o estado de conservação, a qualidade dos materiais e acabamentos, a ventilação, a iluminação, o conforto, a salubridade, a segurança e a robustez da edificação. O § 1º acrescenta, para edificações residenciais, a área, os dormitórios, os sanitários, os pavimentos, os cômodos, as vagas e os itens adicionais. O § 2º exige a análise da quantidade e da predominância desses elementos no conjunto do imóvel. O art. 33 remete ao Anexo IV, que descreve as características de cada tipologia e padrão.",
+      "O Anexo II distingue a tipologia Telheiro — que o Anexo IV define como construção constituída apenas de cobertura e seus apoios, sem fechamentos laterais — com valores unitários de R$ 269,85/m² (Popular) e R$ 122,66/m² (Precário), muito inferiores aos da tipologia Casa. Coberturas acessórias com essas características devem, portanto, ser enquadradas e medidas separadamente do corpo principal da edificação.",
+      "O art. 9º estabelece alíquota de 0,35% para valor venal de até R$ 150.000,00 e de 0,40% entre R$ 150.000,01 e R$ 300.000,00, aplicável ao imposto predial e ao territorial. Por isso, eventual redução do valor venal total para patamar inferior a R$ 150.000,00 também altera a faixa de alíquota.",
+      "O art. 25 determina que todo processo avaliatório siga, no que couber, a norma da ABNT de avaliação de imóveis urbanos, e o art. 156, § 1º, III, da Constituição Federal, na redação da Emenda Constitucional nº 132/2023 (a que se refere o art. 11 da LC nº 392/2025), condiciona a fixação da base de cálculo a critérios estabelecidos em lei municipal. O enquadramento do imóvel deve, portanto, decorrer da aplicação objetiva desses critérios e ser demonstrado ao contribuinte.",
+      "O art. 11, parágrafo único, assegura contraditório e ampla defesa contra o lançamento decorrente da atualização da PGV, nos termos dos arts. 293 a 308 da Lei Municipal nº 1.431/1983 (Código Tributário Municipal). O art. 27 ressalva da regra de efeito apenas no exercício seguinte a impugnação tempestiva do lançamento e o erro inequívoco da Administração."
+    ]
   },
   "pendencias": [
-    "Conferir todos os valores e artigos no texto oficial da LC 392/2025",
-    "Anexo II completo (todas as tipologias e padrões, inclusive Telheiro)",
-    "Anexo IV completo (descrição de cada padrão, para a classificação)",
-    "Alíquotas acima de R$ 300.000,00 e alíquotas de terreno não edificado",
-    "Anexo I / fatores do terreno (zona 49), caso se queira contestar o VVT",
-    "Como e onde protocolar (presencial, online, prazos)"
+    "Conferir as alterações posteriores da LC 392/2025 (LC 400/2025, LC 412/2026 e LC 414/2026; pelos títulos, mudam os arts. 8º e 14) — não lidas",
+    "Prazo de impugnação e canal de protocolo (CTM, arts. 293 a 308; presencial ou online) — não levantados",
+    "Anexo I (valor do m² por face de quadra, 422 páginas) e fatores do terreno não foram usados: o VVT lançado é mantido",
+    "Valores e parcelas da taxa de lixo vêm do carnê 2026, não de lei"
   ]
 }

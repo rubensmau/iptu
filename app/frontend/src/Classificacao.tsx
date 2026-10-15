@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
-import { api, type Caso, type Confirmacao, type Municipio } from './api'
+import { api, num, type BlocoConstrucao, type Caso, type Confirmacao, type Municipio } from './api'
 import { poe } from './rotulos'
 
 /**
@@ -107,6 +107,7 @@ export default function Classificacao({ caso, municipio, iaDisponivel, aoMudar }
           {padroes.length <= 1 && cl.tipologia && (
             <p className="fraco">O perfil de {municipio.nome} só tem {padroes.length} padrão para {cl.tipologia}: a lei (Anexos II e IV) ainda não foi levantada por completo.</p>
           )}
+          <Blocos caso={caso} municipio={municipio} aoMudar={aoMudar} />
         </>
       )}
       {erro && <p className="erro">{erro}</p>}
@@ -163,5 +164,78 @@ function Quadro({ linhas }: { linhas: { elemento: string; evidencias: string; co
       <thead><tr><th>Elemento</th><th>Evidências do laudo</th><th>Conclusão</th></tr></thead>
       <tbody>{linhas.map((l, i) => <tr key={i}><td className="nome">{l.elemento}</td><td>{l.evidencias}</td><td>{l.conclusao}</td></tr>)}</tbody>
     </table>
+  )
+}
+
+/**
+ * Classificação por ambiente: partes da construção (garagem, área de serviço...) enquadradas
+ * à parte, cada uma com seus m². A área delas sai do corpo principal no cálculo.
+ */
+function Blocos({ caso, municipio, aoMudar }: { caso: Caso; municipio: Municipio; aoMudar: (c: Caso) => void }) {
+  const blocos = caso.classificacao.acessorias ?? []
+  const muda = (novos: BlocoConstrucao[]) => aoMudar({ ...caso, classificacao: { ...caso.classificacao, acessorias: novos } })
+  const edita = (i: number, campos: Partial<BlocoConstrucao>) => muda(blocos.map((b, j) => (j === i ? { ...b, ...campos } : b)))
+  const tipologias = Object.keys(municipio.padroes)
+  const padroesDe = (t: string) => municipio.padroes[t] ?? []
+  function adiciona() {
+    const tipologia = tipologias.includes('Telheiro') ? 'Telheiro' : tipologias[0]
+    const padroes = padroesDe(tipologia)
+    muda([...blocos, {
+      descricao: blocos.length ? 'Área de serviço' : 'Garagem', ambientes: null, tipologia,
+      padrao: padroes.includes('Popular') ? 'Popular' : padroes[0], conservacao: municipio.conservacao.includes('Regular') ? 'Regular' : municipio.conservacao[0], area_m2: null,
+    }])
+  }
+  const total = blocos.reduce((t, b) => t + (b.area_m2 ?? 0), 0)
+  const construida = caso.imovel.area_construida_m2
+
+  return (
+    <div className="confirmacoes">
+      <h3>Classificação por ambiente (áreas à parte)</h3>
+      <p className="fraco">
+        Garagem, área de serviço e outras coberturas podem ter enquadramento próprio (ex.: Telheiro, bem mais barato que Casa).
+        O valor de cada bloco é proporcional aos seus m². O laudo não traz a metragem por ambiente: meça e informe a área.
+      </p>
+      {blocos.length > 0 && (
+        <table className="blocos">
+          <thead><tr><th>Bloco</th><th>Tipologia</th><th>Padrão</th><th>Conservação</th><th className="num">Área (m²)</th><th /></tr></thead>
+          <tbody>
+            {blocos.map((b, i) => (
+              <tr key={i} className={b.area_m2 ? '' : 'falta'} title={b.ambientes ?? ''}>
+                <td><input defaultValue={b.descricao} key={`d${i}:${b.descricao}`} onBlur={(e) => e.target.value !== b.descricao && edita(i, { descricao: e.target.value })} /></td>
+                <td>
+                  <select value={b.tipologia} onChange={(e) => edita(i, { tipologia: e.target.value, padrao: padroesDe(e.target.value)[0] ?? '' })}>
+                    {tipologias.map((t) => <option key={t}>{t}</option>)}
+                  </select>
+                </td>
+                <td>
+                  <select value={b.padrao} onChange={(e) => edita(i, { padrao: e.target.value })}>
+                    {padroesDe(b.tipologia).map((p) => <option key={p}>{p}</option>)}
+                  </select>
+                </td>
+                <td>
+                  <select value={b.conservacao} onChange={(e) => edita(i, { conservacao: e.target.value })}>
+                    {municipio.conservacao.map((c) => <option key={c}>{c}</option>)}
+                  </select>
+                </td>
+                <td className="num">
+                  <input className="area" placeholder="medir" key={`a${i}:${b.area_m2}`} defaultValue={b.area_m2 == null ? '' : num(b.area_m2)}
+                    onBlur={(e) => {
+                      const v = e.target.value.trim() === '' ? null : Number(e.target.value.replace(/\./g, '').replace(',', '.'))
+                      if (v === null || (Number.isFinite(v) && v >= 0)) edita(i, { area_m2: v || null })
+                    }} />
+                </td>
+                <td><button onClick={() => muda(blocos.filter((_, j) => j !== i))} title="Remover bloco">×</button></td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      )}
+      <div className="linha">
+        <button onClick={adiciona}>+ Adicionar área à parte</button>
+        {blocos.length > 0 && construida != null && (
+          <span className="fraco">Corpo principal: {num(construida - total)} m² de {num(construida)} m² do cadastro{blocos.some((b) => !b.area_m2) && ' (blocos sem área ficam fora do cálculo)'}.</span>
+        )}
+      </div>
+    </div>
   )
 }

@@ -3,6 +3,7 @@ import { api, type Caso, type Municipio } from './api'
 import Campos from './Campos'
 import Classificacao from './Classificacao'
 import Documentos from './Documentos'
+import Requerimento from './Requerimento'
 import Simulacao from './Simulacao'
 
 const CHAVE = 'iptu_caso'
@@ -39,7 +40,7 @@ export default function App() {
   return (
     <div className="pagina">
       <header>
-        <h1>Revisão de IPTU</h1>
+        <h1>Revisão de IPTU <span className="versao">versão de {__VERSAO__}</span></h1>
         <p className="resumo">
           Monta o pedido de revisão do IPTU e do valor venal a partir dos documentos que você já tem.
           {municipios.length > 0 && <> Municípios com perfil: {municipios.map((m) => `${m.nome}/${m.uf}`).join(', ')}.</>}
@@ -74,10 +75,7 @@ export default function App() {
           <Campos caso={caso} aoMudar={setCaso} />
           <Classificacao caso={caso} municipio={municipio} iaDisponivel={ia} aoMudar={setCaso} />
           {municipio && <Simulacao caso={caso} />}
-          <section className="cartao">
-            <h2>5. Requerimento</h2>
-            <p className="fraco">A geração do requerimento (.docx) no modelo da prefeitura é a próxima etapa. Por ora, baixe o caso em JSON.</p>
-          </section>
+          <Requerimento caso={caso} temPerfil={!!municipio} />
         </>
       )}
     </div>

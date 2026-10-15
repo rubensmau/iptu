@@ -15,7 +15,7 @@ export function alertasLaudo(laudo: Laudo): string[] {
     out.push(`Laudo: ${contraditorios.length} de ${itens.length} itens vêm como "em bom estado", mas as observações descrevem defeitos. Citar as observações, não o título do item.`);
   }
   if (/entrada|saída|saida|loca/i.test(`${laudo.tipo ?? ''}`)) {
-    out.push('Laudo de vistoria de locação, sem ART nem croqui: a área útil não equivale necessariamente à área construída do cadastro.');
+    out.push('Laudo de vistoria de locação, sem ART nem croqui: serve como relatório fotográfico do estado do imóvel (o pedido não depende dele), mas a área útil não equivale necessariamente à área construída do cadastro.');
   }
   return out;
 }
@@ -43,7 +43,7 @@ export function casoVazio(municipio: string): Caso {
     laudo: null,
     classificacao: {
       tipologia: null, padrao: null, conservacao: null, caracteristicas: [], estado: [],
-      areas_acessorias: null, confianca: null, pontos_fracos: [],
+      areas_acessorias: null, acessorias: [], confianca: null, pontos_fracos: [],
     },
     anexos: [],
     confirmacoes: [],

@@ -1,7 +1,8 @@
-import type { Caso, Confirmacao, Classificacao, Extracao } from '../../backend/src/tipos'
+import type { BlocoConstrucao, Caso, Confirmacao, Classificacao, Extracao } from '../../backend/src/tipos'
 import type { Simulacao } from '../../backend/src/calc'
+import type { Lacuna } from '../../backend/src/lacunas'
 
-export type { Caso, Confirmacao, Classificacao, Extracao, Simulacao }
+export type { BlocoConstrucao, Caso, Confirmacao, Classificacao, Extracao, Lacuna, Simulacao }
 
 const BASE = import.meta.env.BASE_URL.replace(/\/$/, '')
 
@@ -20,7 +21,11 @@ export type Trabalho = { status: 'rodando' | 'pronto' | 'erro'; resultado?: Resu
 export type RespostaSimulacao = {
   simulacao: Simulacao | null
   cenarios: Simulacao[]
-  implicito: { efetivo: number; padroes: { tipologia: string; padrao: string; valor_m2: number; fc_implicito: number }[] } | null
+  implicito: {
+    efetivo: number
+    padroes: { tipologia: string; padrao: string; valor_m2: number; fc_implicito: number }[]
+    blocos: { padrao: string; conservacao: string; telheiro: string; area_principal: number; area_telheiro: number }[]
+  } | null
 }
 
 async function pede<T>(caminho: string, init?: RequestInit): Promise<T> {
@@ -45,6 +50,17 @@ export const api = {
   simular: (caso: Caso) => pede<RespostaSimulacao>('/simular', json({ caso })),
   classificar: (caso: Caso) => pede<{ id: string }>('/classificacoes', json({ caso })),
   trabalho: (id: string) => pede<Trabalho>(`/classificacoes/${id}`),
+  lacunas: (caso: Caso) => pede<{ lacunas: Lacuna[] }>('/lacunas', json({ caso })),
+  /** Baixa o rascunho do requerimento (.docx). */
+  requerimento: async (caso: Caso) => {
+    const r = await fetch(`${BASE}/api/requerimento`, json({ caso }))
+    if (!r.ok) throw new Error((await r.json().catch(() => ({}))).error ?? `erro ${r.status}`)
+    const nome = /filename="([^"]+)"/.exec(r.headers.get('Content-Disposition') ?? '')?.[1] ?? 'requerimento.docx'
+    const url = URL.createObjectURL(await r.blob())
+    const a = document.createElement('a')
+    a.href = url; a.download = nome; a.click()
+    URL.revokeObjectURL(url)
+  },
 }
 
 export const brl = (x: number | null | undefined) =>

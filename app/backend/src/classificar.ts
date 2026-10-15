@@ -8,7 +8,8 @@ import Anthropic from '@anthropic-ai/sdk';
 import { betaZodOutputFormat } from '@anthropic-ai/sdk/helpers/beta/zod';
 import { z } from 'zod';
 import { brl, simular } from './calc.js';
-import type { Caso, Classificacao, Confirmacao, PerfilMunicipio } from './tipos.js';
+import { normaliza } from './cruzamento.js';
+import type { BlocoConstrucao, Caso, Classificacao, Confirmacao, PerfilMunicipio } from './tipos.js';
 
 const MODELO = 'claude-opus-5-5';
 
@@ -23,6 +24,13 @@ Regras:
 - Considere a predominância dos elementos no conjunto do imóvel, não o pior item isolado.
 - Seja honesto: se as evidências apoiam um estado melhor que o pedido, diga. O proprietário vai decidir.
 - Só use padrões e estados que existem no perfil. Se o imóvel não se encaixa em nenhum padrão disponível, diga isso na justificativa.
+- Compare o imóvel com a descrição de CADA padrão da tipologia (Anexo IV), não só com o sugerido: aponte os requisitos
+  que o imóvel não cumpre (ex.: o padrão Popular pede forro; o Precário descreve cobertura sem forro).
+- Classifique por ambiente: partes da construção que se encaixam em outra tipologia (ex.: Telheiro — só cobertura e
+  apoios, sem fechamentos laterais — para garagem ou área de serviço) devem ir em "acessorias", cada uma com tipologia,
+  padrão e estado próprios. O pedido calcula o valor de cada bloco proporcional aos seus m²; o laudo não traz a área
+  de cada ambiente, então não invente metragem.
+- O laudo de vistoria de locação não tem ART: ele vale como relatório fotográfico do estado do imóvel.
 - Cada critério subjetivo (padrão, estado de conservação, áreas acessórias como garagem e área de serviço,
   e qualquer outra dúvida relevante) deve virar uma confirmação para o proprietário, com opções fechadas e uma sugestão.
 - Escreva em português do Brasil, em texto adequado para constar num requerimento à prefeitura.`;
@@ -44,6 +52,13 @@ function esquema(perfil: PerfilMunicipio) {
     caracteristicas: z.array(elemento).describe('características construtivas por elemento (define o padrão)'),
     estado: z.array(elemento).describe('estado de conservação por elemento (define o fator de conservação)'),
     areas_acessorias: z.string().describe('garagem, área de serviço, telheiros: como deveriam ser classificadas'),
+    acessorias: z.array(z.object({
+      descricao: z.string().describe('ex.: Garagem, Área de serviço'),
+      ambientes: z.string().describe('ambientes do laudo, com número: "2. Garagem"'),
+      tipologia: z.enum(tipologias),
+      padrao: z.enum(padroes),
+      conservacao: z.enum(estados),
+    })).describe('partes da construção a enquadrar separadamente do corpo principal; vazio se não houver'),
     pontos_fracos: z.array(z.string()).describe('o que a prefeitura pode usar contra o pedido'),
     confirmacoes: z.array(z.object({
       id: z.string().describe('identificador curto: padrao, conservacao, garagem, area_servico...'),
@@ -59,14 +74,18 @@ function contexto(caso: Caso, perfil: PerfilMunicipio): string {
   const normas = perfil.normas.map((n) =>
     `${n.tipo} ${n.numero}/${n.ano} (${n.descricao}):\n` +
     Object.entries(n.artigos).map(([a, t]) => `  - ${a}: ${t}`).join('\n')).join('\n');
-  const padroes = Object.entries(perfil.valores_construcao).flatMap(([tipo, ps]) =>
+  // só a tipologia do caso e o Telheiro: a tabela inteira encheria o contexto à toa
+  const tipoCaso = caso.classificacao.tipologia ?? caso.imovel.tipo_cadastro ?? laudoCategoria(caso);
+  const relevantes = Object.entries(perfil.valores_construcao)
+    .filter(([tipo]) => !tipoCaso || tipo === tipoCaso || tipo === 'Telheiro' || !(tipoCaso in perfil.valores_construcao));
+  const padroes = relevantes.flatMap(([tipo, ps]) =>
     Object.entries(ps).map(([p, v]) => `  - ${tipo} ${p}: ${v.valor_m2 != null ? brl(v.valor_m2) + '/m²' : 'valor não levantado'}. ${v.descricao ?? ''}`));
   const fcs = Object.entries(perfil.fatores_conservacao).map(([e, f]) => `${e} = ${f.toFixed(2)}`).join('; ');
   const laudo = caso.laudo;
   return [
     `# Município: ${perfil.nome}/${perfil.uf}, exercício ${perfil.exercicio}`,
     normas,
-    `\nPadrões construtivos disponíveis no perfil (os demais ainda não foram levantados):\n${padroes.join('\n')}`,
+    `\nPadrões construtivos (Anexos II e IV) das tipologias relevantes; outras tipologias existem na tabela: ${Object.keys(perfil.valores_construcao).join(', ')}.\n${padroes.join('\n')}`,
     `\nFatores de conservação (${perfil.ref_fatores_conservacao}): ${fcs}`,
     `\n# Cadastro municipal`,
     `Tipo no cadastro: ${caso.imovel.tipo_cadastro ?? '?'}; área construída ${caso.imovel.area_construida_m2 ?? '?'} m²; terreno ${caso.imovel.area_terreno_m2 ?? '?'} m².`,
@@ -76,12 +95,14 @@ function contexto(caso: Caso, perfil: PerfilMunicipio): string {
   ].join('\n');
 }
 
+const laudoCategoria = (caso: Caso) => caso.laudo?.categoria ?? null;
+
 /** Efeito no IPTU de cada estado de conservação, para o padrão sugerido. */
-function impactoConservacao(caso: Caso, perfil: PerfilMunicipio, tipologia: string, padrao: string): Record<string, string> {
+function impactoConservacao(caso: Caso, perfil: PerfilMunicipio, tipologia: string, padrao: string, acessorias: BlocoConstrucao[]): Record<string, string> {
   const out: Record<string, string> = {};
   for (const estado of Object.keys(perfil.fatores_conservacao)) {
     try {
-      const s = simular(caso, perfil, { tipologia, padrao, conservacao: estado });
+      const s = simular(caso, perfil, { tipologia, padrao, conservacao: estado, acessorias });
       const d = s.reducao_iptu;
       out[estado] = `${estado}: IPTU ${brl(s.revisado.iptu_anual)}` +
         (d == null ? '' : d >= 0 ? ` (redução de ${brl(d)}/ano)` : ` (AUMENTO de ${brl(-d)}/ano)`);
@@ -113,7 +134,12 @@ export async function classificar(caso: Caso, perfil: PerfilMunicipio, client = 
   const r = resp.parsed_output;
   if (!r) throw new Error('resposta sem JSON válido');
 
-  const impacto = impactoConservacao(caso, perfil, r.tipologia, r.padrao);
+  // as áreas dos blocos acessórios quem mede é o proprietário: aproveita as que ele já informou
+  const acessorias: BlocoConstrucao[] = r.acessorias.map((a) => ({
+    ...a,
+    area_m2: caso.classificacao.acessorias?.find((b) => normaliza(b.descricao) === normaliza(a.descricao))?.area_m2 ?? null,
+  }));
+  const impacto = impactoConservacao(caso, perfil, r.tipologia, r.padrao, acessorias);
   const chave = (opcao: string, validas: string[]) =>
     validas.find((v) => opcao === v || opcao.startsWith(`${v} `) || opcao.startsWith(`${v}(`)) ?? null;
   const estados = Object.keys(perfil.fatores_conservacao);
@@ -149,7 +175,7 @@ export async function classificar(caso: Caso, perfil: PerfilMunicipio, client = 
   return {
     classificacao: {
       tipologia: r.tipologia, padrao: r.padrao, conservacao: r.conservacao,
-      caracteristicas: r.caracteristicas, estado: r.estado, areas_acessorias: r.areas_acessorias,
+      caracteristicas: r.caracteristicas, estado: r.estado, areas_acessorias: r.areas_acessorias, acessorias,
       confianca: r.confianca, pontos_fracos: r.pontos_fracos,
     },
     confirmacoes,
