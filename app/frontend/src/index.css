@@ -121,3 +121,11 @@ table.blocos input, table.blocos select { width: 100%; padding: 4px 6px; font-si
 table.blocos td { padding: 4px; vertical-align: middle; }
 table.blocos input.area { max-width: 90px; }
 tr.falta input.area { border-color: var(--ambar); background: var(--ambar-claro); }
+
+/* etapas da leitura e da montagem do caso (passo 1) */
+.etapas { margin-top: 14px; padding: 10px 14px; border-radius: 8px; background: var(--ambar-claro); }
+.etapas h3 { margin: 0 0 6px; }
+.etapas ul { list-style: none; margin: 0; padding: 0; }
+.etapas li { padding: 2px 0; }
+.etapas li.espera { color: #888; }
+.etapas .icone { display: inline-block; width: 1.5em; }
