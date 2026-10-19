@@ -1,7 +1,9 @@
-// Gera o rascunho do requerimento de revisão (.docx) a partir do caso, do perfil
-// do município e da simulação. Tudo o que falta sai destacado em amarelo
-// ("[PREENCHER: ...]") e a primeira página lista as lacunas — ela é para quem
-// revisa e deve ser removida antes de protocolar.
+// Gera o requerimento de revisão (.docx) a partir do caso, do perfil do município
+// e da simulação, em duas versões:
+// - preparatória: o que falta sai em amarelo ("[PREENCHER: ...]") e a primeira
+//   página lista as lacunas e ressalvas, para quem revisa;
+// - final: a que vai à Prefeitura, mesmo incompleta — sem a lista, sem destaque e
+//   sem instruções internas; o que falta vira uma linha em branco.
 //
 // Estrutura baseada no requerimento-exemplo de Mogi Mirim (revisao_iptu.docx),
 // com os ajustes das respostas do sócio (docs/aprendizados_2026-10-15.md).
@@ -18,7 +20,11 @@ const AMARELO = 'yellow';
 type Trecho = string | TextRun;
 
 const t = (text: string, o: { bold?: boolean; italics?: boolean } = {}) => new TextRun({ text, ...o });
-const falta = (o_que: string) => new TextRun({ text: `[PREENCHER: ${o_que}]`, highlight: AMARELO, bold: true });
+// Ligado só enquanto gerarRequerimento monta o documento (trecho síncrono).
+let versaoFinal = false;
+const falta = (o_que: string) => (versaoFinal
+  ? new TextRun({ text: '____________________' })
+  : new TextRun({ text: `[PREENCHER: ${o_que}]`, highlight: AMARELO, bold: true }));
 const ou = (v: string | number | null | undefined, o_que: string): TextRun => (v == null || v === '' ? falta(o_que) : t(String(v)));
 
 const par = (trechos: Trecho[] | string, o: { bold?: boolean; alinhamento?: (typeof AlignmentType)[keyof typeof AlignmentType]; depois?: number } = {}) =>
@@ -84,7 +90,14 @@ function quadro(linhas: ElementoAvaliado[], cab: string[]): (Table | Paragraph)[
   return [tabela(cab, linhas.map((l) => [l.elemento, l.evidencias, l.conclusao]), [22, 48, 30])];
 }
 
-export async function gerarRequerimento(caso: Caso, perfil: PerfilMunicipio, hoje = new Date()): Promise<{ buffer: Buffer; lacunas: Lacuna[] }> {
+export async function gerarRequerimento(caso: Caso, perfil: PerfilMunicipio, hoje = new Date(), final = false): Promise<{ buffer: Buffer; lacunas: Lacuna[] }> {
+  versaoFinal = final;
+  let doc: Document;
+  try { doc = montarDocumento(caso, perfil, hoje, final); } finally { versaoFinal = false; }
+  return { buffer: await Packer.toBuffer(doc), lacunas: lacunas(caso, perfil) };
+}
+
+function montarDocumento(caso: Caso, perfil: PerfilMunicipio, hoje: Date, final: boolean): Document {
   const pend = lacunas(caso, perfil);
   const sim = simulacaoDoCaso(caso, perfil);
   const c = caso.classificacao, l = caso.lancamento, im = caso.imovel, r = caso.requerente;
@@ -99,15 +112,14 @@ export async function gerarRequerimento(caso: Caso, perfil: PerfilMunicipio, hoj
 
   // ---------------------------------------------------------------- folha de revisão (sai antes de protocolar)
   const porGravidade: [Lacuna['gravidade'], string][] = [['bloqueia', 'Impedem o cálculo'], ['preencher', 'Dados e documentos a fornecer'], ['conferir', 'Pontos a conferir ou decidir']];
-  corpo.push(caixa(`RASCUNHO gerado em ${hoje.toLocaleDateString('pt-BR')} — ${pend.length} lacuna(s). REMOVA ESTA CAIXA ANTES DE PROTOCOLAR.`, [
+  if (!final) corpo.push(caixa(`RASCUNHO gerado em ${hoje.toLocaleDateString('pt-BR')} — ${pend.length} lacuna(s). REMOVA ESTA CAIXA ANTES DE PROTOCOLAR.`, [
     par('Os trechos em amarelo no texto são lacunas ou pontos a conferir. Resumo:', { alinhamento: AlignmentType.LEFT }),
     ...porGravidade.flatMap(([g, rotulo]) => {
       const itens = pend.filter((x) => x.gravidade === g);
       return itens.length ? [par(`${rotulo} (${itens.length}):`, { bold: true, alinhamento: AlignmentType.LEFT, depois: 40 }),
         ...itens.map((x) => par(`• ${x.texto}`, { alinhamento: AlignmentType.LEFT, depois: 40 }))] : [];
     }),
-  ], 'FFF4CC'));
-  corpo.push(espaco());
+  ], 'FFF4CC'), espaco());
 
   // ---------------------------------------------------------------- cabeçalho
   corpo.push(...perfil.requerimento.destinatario.map((d) => par(d, { bold: true, alinhamento: AlignmentType.LEFT, depois: 0 })), espaco());
@@ -288,7 +300,7 @@ export async function gerarRequerimento(caso: Caso, perfil: PerfilMunicipio, hoj
     },
     sections: [{ properties: { page: { margin: { top: 1134, bottom: 1134, left: 1418, right: 1134 } } }, children: corpo }],
   });
-  return { buffer: await Packer.toBuffer(doc), lacunas: pend };
+  return doc;
 }
 
 function quadroComparativo(caso: Caso, s: Simulacao, efetivoAtual: number | null): Table {
@@ -313,4 +325,5 @@ function quadroComparativo(caso: Caso, s: Simulacao, efetivoAtual: number | null
 }
 
 /** Nome de arquivo do rascunho. */
-export const nomeRequerimento = (caso: Caso) => `requerimento_iptu_${(caso.imovel.inscricao ?? 'rascunho').replace(/[^\w-]+/g, '_')}.docx`;
+export const nomeRequerimento = (caso: Caso, final = false) =>
+  `requerimento_iptu_${(caso.imovel.inscricao ?? 'sem_inscricao').replace(/[^\w-]+/g, '_')}_${final ? 'final' : 'preparatorio'}.docx`;

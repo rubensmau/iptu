@@ -51,9 +51,9 @@ export const api = {
   trabalho: (id: string) => pede<Trabalho>(`/classificacoes/${id}`),
   conferirRegistro: (caso: Caso, registro: Registro) => pede<{ alertas: string[] }>('/registro/conferencia', json({ caso, registro })),
   lacunas: (caso: Caso) => pede<{ lacunas: Lacuna[] }>('/lacunas', json({ caso })),
-  /** Baixa o rascunho do requerimento (.docx). */
-  requerimento: async (caso: Caso) => {
-    const r = await fetch(`${BASE}/api/requerimento`, json({ caso }))
+  /** Baixa o requerimento (.docx): preparatório, com as lacunas destacadas, ou final, limpo para protocolar. */
+  requerimento: async (caso: Caso, final = false) => {
+    const r = await fetch(`${BASE}/api/requerimento${final ? '?final=1' : ''}`, json({ caso }))
     if (!r.ok) throw new Error((await r.json().catch(() => ({}))).error ?? `erro ${r.status}`)
     const nome = /filename="([^"]+)"/.exec(r.headers.get('Content-Disposition') ?? '')?.[1] ?? 'requerimento.docx'
     const url = URL.createObjectURL(await r.blob())

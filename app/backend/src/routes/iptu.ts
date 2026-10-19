@@ -97,15 +97,16 @@ router.post('/lacunas', express.json({ limit: '5mb' }), (req, res) => {
   res.json({ lacunas: lacunas(caso, perfil(caso.municipio)) });
 });
 
-// Rascunho do requerimento em .docx, com as lacunas destacadas.
+// Requerimento em .docx: preparatório (lacunas destacadas) ou final (?final=1, limpo para protocolar).
 router.post('/requerimento', express.json({ limit: '5mb' }), async (req, res) => {
   const caso: Caso = req.body?.caso;
   const p = caso && perfil(caso.municipio);
   if (!p) return res.status(422).json({ error: 'município sem perfil cadastrado: não há modelo de requerimento' });
   try {
-    const { buffer } = await gerarRequerimento(caso, p);
+    const final = req.query.final === '1';
+    const { buffer } = await gerarRequerimento(caso, p, new Date(), final);
     res.set('Content-Type', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document');
-    res.set('Content-Disposition', `attachment; filename="${nomeRequerimento(caso)}"`);
+    res.set('Content-Disposition', `attachment; filename="${nomeRequerimento(caso, final)}"`);
     res.send(buffer);
   } catch (e) {
     res.status(500).json({ error: `falha ao gerar o requerimento: ${(e as Error).message}` });
