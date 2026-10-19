@@ -1,12 +1,13 @@
 import { useEffect, useState } from 'react'
 import { api, type Extracao, type ResultadoExtracao } from './api'
 
-type Tipo = 'laudo' | 'carne' | 'outro'
+type Tipo = 'laudo' | 'carne' | 'registro' | 'outro'
 type Linha = { tipo: Tipo; arquivo: File; estado: 'lendo' | 'ok' | 'erro'; resultado?: ResultadoExtracao; erro?: string }
 
 const VAGAS: { tipo: Tipo; titulo: string; dica: string; varios?: boolean }[] = [
   { tipo: 'laudo', titulo: 'Laudo de vistoria', dica: 'o laudo do imóvel, com a descrição dos cômodos e do estado de conservação' },
   { tipo: 'carne', titulo: 'Carnê do IPTU', dica: 'carnê, boleto ou documento de arrecadação do IPTU do ano' },
+  { tipo: 'registro', titulo: 'Matrícula ou escritura (recomendado)', dica: 'certidão da matrícula e/ou escritura de compra — confere titulares, endereço, áreas e preço pago (lida por IA)' },
   { tipo: 'outro', titulo: 'Outros documentos (opcional)', dica: 'ficha cadastral (BCI), memória de cálculo…', varios: true },
 ]
 
@@ -28,7 +29,7 @@ export default function Documentos({ iaDisponivel, aoMontar }: {
     setLinhas((l) => [...(tipo === 'outro' ? l : l.filter((x) => x.tipo !== tipo)), ...novos])
     await Promise.all(novos.map(async (n) => {
       try {
-        const resultado = await api.documento(n.arquivo, usarIA)
+        const resultado = await api.documento(n.arquivo, usarIA, tipo)
         const estado = resultado.extracao ? 'ok' : 'erro'
         setLinhas((l) => l.map((x) => (x === n ? { ...x, estado, resultado, erro: resultado.erro } : x)))
       } catch (e) {

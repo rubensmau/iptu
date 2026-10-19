@@ -46,7 +46,7 @@ export const GRUPOS: { titulo: string; campos: Campo[] }[] = [
 ]
 
 export const ROTULO_FONTE: Record<string, string> = {
-  laudo: 'laudo', carne: 'carnê', bci: 'BCI', legislacao: 'lei', julgamento: 'sugestão', calculo: 'cálculo', usuario: 'você',
+  laudo: 'laudo', carne: 'carnê', bci: 'BCI', registro: 'matrícula', legislacao: 'lei', julgamento: 'sugestão', calculo: 'cálculo', usuario: 'você',
 }
 
 export function pega(obj: unknown, caminho: string): unknown {

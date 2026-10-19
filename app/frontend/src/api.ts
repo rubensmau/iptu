@@ -1,8 +1,7 @@
-import type { BlocoConstrucao, Caso, Confirmacao, Classificacao, Extracao } from '../../backend/src/tipos'
+import type { BlocoConstrucao, Caso, Confirmacao, Classificacao, Extracao, Lacuna, Registro } from '../../backend/src/tipos'
 import type { Simulacao } from '../../backend/src/calc'
-import type { Lacuna } from '../../backend/src/lacunas'
 
-export type { BlocoConstrucao, Caso, Confirmacao, Classificacao, Extracao, Lacuna, Simulacao }
+export type { BlocoConstrucao, Caso, Confirmacao, Classificacao, Extracao, Lacuna, Registro, Simulacao }
 
 const BASE = import.meta.env.BASE_URL.replace(/\/$/, '')
 
@@ -20,7 +19,6 @@ export type ResultadoClassificacao = {
 export type Trabalho = { status: 'rodando' | 'pronto' | 'erro'; resultado?: ResultadoClassificacao; erro?: string; segundos: number }
 export type RespostaSimulacao = {
   simulacao: Simulacao | null
-  cenarios: Simulacao[]
   implicito: {
     efetivo: number
     padroes: { tipologia: string; padrao: string; valor_m2: number; fc_implicito: number }[]
@@ -40,8 +38,8 @@ const json = (corpo: unknown): RequestInit => ({
 
 export const api = {
   municipios: () => pede<{ municipios: Municipio[]; ia_disponivel: boolean }>('/municipios'),
-  documento: (arquivo: File, ia: boolean) =>
-    pede<ResultadoExtracao>(`/documentos${ia ? '?ia=1' : ''}`, {
+  documento: (arquivo: File, ia: boolean, tipo?: string) =>
+    pede<ResultadoExtracao>(`/documentos?${new URLSearchParams({ ...(ia ? { ia: '1' } : {}), ...(tipo ? { tipo } : {}) })}`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/pdf', 'X-Nome-Arquivo': encodeURIComponent(arquivo.name) },
       body: arquivo,
@@ -51,6 +49,7 @@ export const api = {
   classificar: (caso: Caso) => pede<{ id: string }>('/classificacoes', json({ caso })),
   recalcular: (caso: Caso) => pede<{ confirmacoes: Confirmacao[]; alertas: string[] }>('/classificacoes/recalculo', json({ caso })),
   trabalho: (id: string) => pede<Trabalho>(`/classificacoes/${id}`),
+  conferirRegistro: (caso: Caso, registro: Registro) => pede<{ alertas: string[] }>('/registro/conferencia', json({ caso, registro })),
   lacunas: (caso: Caso) => pede<{ lacunas: Lacuna[] }>('/lacunas', json({ caso })),
   /** Baixa o rascunho do requerimento (.docx). */
   requerimento: async (caso: Caso) => {

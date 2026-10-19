@@ -72,7 +72,7 @@ export default function App() {
             </section>
           )}
 
-          <Campos caso={caso} aoMudar={setCaso} />
+          <Campos caso={caso} iaDisponivel={ia} aoMudar={setCaso} />
           <Classificacao caso={caso} municipio={municipio} iaDisponivel={ia} aoMudar={setCaso} />
           {municipio && <Simulacao caso={caso} />}
           <Requerimento caso={caso} temPerfil={!!municipio} />

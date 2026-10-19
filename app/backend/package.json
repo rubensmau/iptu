@@ -11,6 +11,7 @@
     "simula": "tsx src/simula.ts",
     "classifica": "tsx src/classifica.ts",
     "requerimento": "tsx src/gera-requerimento.ts",
+    "ipca": "tsx src/atualiza-ipca.ts",
     "typecheck": "tsc --noEmit"
   },
   "devDependencies": {

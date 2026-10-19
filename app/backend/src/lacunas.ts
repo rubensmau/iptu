@@ -1,14 +1,10 @@
 // O que ainda falta para o requerimento poder ser protocolado. O rascunho é gerado
 // mesmo com lacunas: cada uma aparece destacada no .docx e listada na tela.
 import { acessoriasValidas, cenarios, simular, type Simulacao } from './calc.js';
-import type { Caso, PerfilMunicipio } from './tipos.js';
+import { comparaMercado } from './mercado.js';
+import type { Caso, Gravidade, Lacuna, PerfilMunicipio } from './tipos.js';
 
-export type Gravidade =
-  | 'bloqueia'   // sem isto o rascunho sai sem o cálculo da revisão
-  | 'preencher'  // dado ou documento que só o proprietário fornece
-  | 'conferir';  // ponto em aberto (lei, prazo, estratégia) — decidir antes de protocolar
-
-export interface Lacuna { gravidade: Gravidade; texto: string }
+export type { Gravidade, Lacuna } from './tipos.js';
 
 /** Simulação do cenário escolhido na classificação, ou null se ainda não dá para calcular. */
 export function simulacaoDoCaso(caso: Caso, perfil: PerfilMunicipio | null): Simulacao | null {
@@ -60,10 +56,16 @@ export function lacunas(caso: Caso, perfil: PerfilMunicipio | null): Lacuna[] {
     }
     for (const p of perfil.pendencias) add('conferir', `Perfil de ${perfil.nome}: ${p}`);
   }
+  const mercado = comparaMercado(caso, perfil?.exercicio);
+  if (mercado && mercado.excesso > 0) {
+    add('conferir', `Argumento de valor de mercado incluído (valor venal ${Math.round(mercado.excesso * 100)}% acima do preço de ${mercado.data_compra.slice(0, 4)} corrigido pelo IPCA): decidir se fica; a Prefeitura pode alegar valorização real acima da inflação desde a compra — uma avaliação atual (corretor ou laudo NBR 14653) fortalece o pedido.`);
+  }
   if (c.pontos_fracos.length) add('conferir', `${c.pontos_fracos.length} ponto(s) fraco(s) apontado(s) na análise do laudo: decida se o texto deve rebatê-los.`);
 
   add('preencher', 'Data e assinatura do proprietário (o pedido é dele, independente do laudo).');
-  add('preencher', 'Anexos: RG e CPF, comprovante de vínculo com o imóvel (matrícula ou escritura), procuração se outra pessoa protocolar.');
+  add('preencher', caso.registro
+    ? 'Anexos: RG e CPF e, se outra pessoa protocolar, procuração (a matrícula/escritura já enviada serve de comprovante de vínculo).'
+    : 'Anexos: RG e CPF, comprovante de vínculo com o imóvel (matrícula ou escritura — envie no passo 1 para conferir os dados), procuração se outra pessoa protocolar.');
   add('conferir', 'Sem ART/RRT: a aceitação de laudo fotográfico sem responsável técnico está sendo testada nos primeiros casos.');
   return out;
 }

@@ -3,7 +3,7 @@ import { api, brl, num, type Caso, type RespostaSimulacao } from './api'
 
 const pct = (a: number) => `${(a * 100).toFixed(2).replace('.', ',')}%`
 
-/** Passo 4: quadro comparativo lançamento × revisão, memória de cálculo e todos os cenários. */
+/** Passo 4: quadro comparativo lançamento × revisão e memória de cálculo. */
 export default function Simulacao({ caso }: { caso: Caso }) {
   const [r, setR] = useState<RespostaSimulacao | null>(null)
   const [erro, setErro] = useState<string | null>(null)
@@ -50,32 +50,13 @@ export default function Simulacao({ caso }: { caso: Caso }) {
           <ul>{s.memoria.map((m, i) => <li key={i}>{m}</li>)}</ul>
         </>
       )}
-      {r && r.cenarios.length > 0 && (
-        <>
-          <h3>Cenários de {r.cenarios[0].cenario.tipologia} (padrão × conservação)</h3>
-          <table>
-            <thead><tr><th>Cenário</th><th className="num">Valor venal</th><th className="num">Alíquota</th><th className="num">IPTU</th><th>Efeito</th></tr></thead>
-            <tbody>
-              {r.cenarios.map((c, i) => (
-                <tr key={i}>
-                  <td>{c.cenario.tipologia} {c.cenario.padrao}, {c.cenario.conservacao}</td>
-                  <td className="num">{brl(c.revisado.valor_venal_imovel)}</td>
-                  <td className="num">{pct(c.revisado.faixa.aliquota)}</td>
-                  <td className="num">{brl(c.revisado.iptu_anual)}</td>
-                  <td>{dif(c.reducao_iptu)}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-          {r.implicito && (
-            <p className="fraco">
-              O lançamento atual equivale a {brl(r.implicito.efetivo)}/m² de construção
-              {r.implicito.padroes.map((p) => ` — fator ${num(p.fc_implicito, 4)} sobre ${p.tipologia} ${p.padrao}`).join('')}.
-              {hipoteses.length > 0 && <> Nenhum fator da tabela fecha sozinho; hipóteses de divisão em blocos que fecham com o lançamento:{' '}
-                {hipoteses.map((b) => `${num(b.area_principal)} m² de ${s?.cenario.tipologia ?? ''} ${b.padrao} ${b.conservacao} + ${num(b.area_telheiro)} m² de Telheiro ${b.telheiro}`).join('; ')}.</>}
-            </p>
-          )}
-        </>
+      {r?.implicito && (
+        <p className="fraco">
+          O lançamento atual equivale a {brl(r.implicito.efetivo)}/m² de construção
+          {r.implicito.padroes.map((p) => ` — fator ${num(p.fc_implicito, 4)} sobre ${p.tipologia} ${p.padrao}`).join('')}.
+          {hipoteses.length > 0 && <> Nenhum fator da tabela fecha sozinho; hipóteses de divisão em blocos que fecham com o lançamento:{' '}
+            {hipoteses.map((b) => `${num(b.area_principal)} m² de ${s?.cenario.tipologia ?? ''} ${b.padrao} ${b.conservacao} + ${num(b.area_telheiro)} m² de Telheiro ${b.telheiro}`).join('; ')}.</>}
+        </p>
       )}
     </section>
   )

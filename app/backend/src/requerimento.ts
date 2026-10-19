@@ -11,6 +11,7 @@ import {
 } from 'docx';
 import { brl, num, valorImplicito, type Simulacao } from './calc.js';
 import { lacunas, simulacaoDoCaso, type Lacuna } from './lacunas.js';
+import { comparaMercado, mesAno } from './mercado.js';
 import type { Caso, ElementoAvaliado, PerfilMunicipio, RefRequerimento } from './tipos.js';
 
 const AMARELO = 'yellow';
@@ -92,6 +93,8 @@ export async function gerarRequerimento(caso: Caso, perfil: PerfilMunicipio, hoj
   const laudo = descricaoLaudo(caso);
   const implicito = valorImplicito(caso, perfil);
   const acessorias = c.acessorias ?? [];
+  const mercado = comparaMercado(caso, perfil.exercicio);
+  const excedeMercado = mercado && mercado.excesso > 0 ? mercado : null;
   const corpo: (Paragraph | Table)[] = [];
 
   // ---------------------------------------------------------------- folha de revisão (sai antes de protocolar)
@@ -194,6 +197,19 @@ export async function gerarRequerimento(caso: Caso, perfil: PerfilMunicipio, hoj
   corpo.push(titulo('IV. FUNDAMENTAÇÃO LEGAL'));
   if (perfil.requerimento.fundamentacao?.length) corpo.push(...perfil.requerimento.fundamentacao.map((p) => par(p)));
   else corpo.push(par([falta(`fundamentação legal de ${perfil.nome}`)]));
+  if (excedeMercado) {
+    const m = excedeMercado, reg = caso.registro!;
+    corpo.push(par(`Há, ainda, limite que independe do enquadramento da construção. O imóvel foi adquirido em ${m.data_compra.split('-').reverse().join('/')} ` +
+      `pelo preço de ${brl(m.preco)}, conforme ${reg.documentos.replace(/ \(lido por IA\)$/, '')}` +
+      `${m.valor_referencia ? `, que registra ainda valor de referência de ${brl(m.valor_referencia)}` : ''}. ` +
+      `Corrigido pelo IPCA de ${mesAno(m.mes_de)} a ${mesAno(m.mes_ate)} (fator ${m.fator.toLocaleString('pt-BR', { minimumFractionDigits: 4, maximumFractionDigits: 4 })}), o preço equivale a ${brl(m.preco_corrigido)}, ` +
+      `ao passo que o valor venal total lançado para ${ex} é de ${brl(m.valor_venal)}, ${(m.excesso * 100).toLocaleString('pt-BR', { minimumFractionDigits: 1, maximumFractionDigits: 1 })}% superior.`));
+    corpo.push(par('Nos termos do art. 33 do Código Tributário Nacional, a base de cálculo do IPTU é o valor venal do imóvel, entendido pela doutrina e pela jurisprudência ' +
+      'como o valor que o bem alcançaria em uma venda à vista, em condições normais de mercado; o valor venal não pode, portanto, superar o valor de mercado. ' +
+      'O Superior Tribunal de Justiça, no Tema 1.113 (REsp 1.937.821/SP), reconheceu que o valor da transação declarado pelo contribuinte goza de presunção de ' +
+      'veracidade, afastável apenas mediante processo administrativo próprio (art. 148 do CTN), e que o Município não pode fixar a base de cálculo por valor de referência ' +
+      `estabelecido unilateralmente. O ${ref('avaliacao')} exige, ademais, que a avaliação siga a norma técnica aplicável.`));
+  }
 
   // ---------------------------------------------------------------- V e VI. quadro e memória
   corpo.push(titulo('V. QUADRO COMPARATIVO'));
@@ -212,7 +228,7 @@ export async function gerarRequerimento(caso: Caso, perfil: PerfilMunicipio, hoj
   corpo.push(titulo('VII. PEDIDOS'));
   const pedidos: Trecho[][] = [
     [t(`o recebimento deste requerimento como impugnação tempestiva do lançamento do IPTU do exercício de ${ex}, nos termos do ${ref('contraditorio')}, com efeitos sobre o próprio exercício, conforme a ressalva do ${ref('efeito')}; e, subsidiariamente, como pedido de revisão cadastral com efeitos a partir do exercício de ${ex + 1}, inclusive para a emissão de certidão de valor venal e como referência em futuras transmissões do imóvel;`)],
-    [t('o fornecimento do BCI, da ficha cadastral e da memória integral do lançamento, com a tipologia, o padrão, a área de cada bloco, o valor unitário e o fator de conservação utilizados;')],
+    [t(`o fornecimento do BCI, da ficha cadastral e da memória integral do lançamento, com a tipologia, o padrão, a área de cada bloco, o valor unitário e o fator de conservação utilizados${perfil.requerimento.refs?.pontuacao ? `, bem como os elementos construtivos anotados no cadastro e a pontuação que levou ao padrão atribuído, nos termos do ${ref('pontuacao')}` : ''};`)],
     [t(`a análise do relatório fotográfico anexo${laudo ? ` — ${laudo} —` : ''} como prova do estado do imóvel e, somente se a Administração entender indispensável, a realização de vistoria, com comunicação prévia ao requerente;`)],
     [t('a avaliação do corpo principal da construção como '), c.padrao ? t(`${c.tipologia}, padrão ${c.padrao}`) : falta('tipologia e padrão'), t(`, à luz dos ${ref('padrao')};`)],
     [t('a avaliação do estado de conservação como '), c.conservacao ? t(`${c.conservacao}, com FC = ${num(perfil.fatores_conservacao[c.conservacao] ?? NaN)}`) : falta('estado de conservação'), t(`, conforme ${ref('conservacao')};`)],
@@ -226,6 +242,9 @@ export async function gerarRequerimento(caso: Caso, perfil: PerfilMunicipio, hoj
     sim
       ? [t(`caso confirmado o enquadramento acima, o recálculo do VVC para ${brl(sim.revisado.valor_venal_edificacao)}, do VVI para ${brl(sim.revisado.valor_venal_imovel)} e do IPTU para ${brl(sim.revisado.iptu_anual)};`)]
       : [falta('valores do recálculo (VVC, VVI e IPTU)')],
+    ...(excedeMercado
+      ? [[t(`subsidiariamente, caso não acolhido integralmente o reenquadramento, a limitação do valor venal total ao valor de mercado do imóvel, tomando-se como referência o preço da aquisição corrigido pelo IPCA (${brl(excedeMercado.preco_corrigido)}), facultada ao requerente a juntada de avaliação atualizada elaborada segundo a NBR 14653;`)]]
+      : []),
     ...(sim && sim.atual && sim.atual.faixa.aliquota !== sim.revisado.faixa.aliquota
       ? [[t(`a revisão da faixa de alíquota para ${pct(sim.revisado.faixa.aliquota)} (${sim.revisado.faixa.ref}), se confirmado o valor venal total revisado;`)]]
       : []),
@@ -242,7 +261,7 @@ export async function gerarRequerimento(caso: Caso, perfil: PerfilMunicipio, hoj
     'Documento de identidade e CPF do requerente;',
     `Carnê / cobrança do IPTU de ${ex};`,
     ...(laudo ? [`${laudo}, como relatório fotográfico;`] : []),
-    'Comprovante de vínculo com o imóvel (matrícula ou escritura);',
+    caso.registro ? `${caso.registro.documentos.replace(/ \(lido por IA\)$/, '')}, como comprovante de vínculo com o imóvel;` : 'Comprovante de vínculo com o imóvel (matrícula ou escritura);',
     'Procuração, se aplicável;',
   ];
   corpo.push(...anexos.map((a) => par(`☐ ${a}`, { alinhamento: AlignmentType.LEFT, depois: 40 })));

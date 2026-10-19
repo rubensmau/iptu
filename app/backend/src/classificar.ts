@@ -19,6 +19,7 @@ e o laudo de vistoria do imóvel, e sugere o enquadramento que a prefeitura deve
 
 Regras:
 - Baseie-se apenas no texto do laudo. Cite as evidências com o número e o nome do ambiente (ex.: "11. Área de Serviço").
+  Se houver descrição da construção na matrícula, use-a como evidência complementar (ex.: "forrada em parte"), citando "matrícula".
 - Laudos de vistoria de locação costumam marcar todo item como "em bom estado" por padrão do sistema;
   o que vale são as observações. Mesmo assim, aponte esse título como ponto fraco do pedido.
 - Considere a predominância dos elementos no conjunto do imóvel, não o pior item isolado.
@@ -92,6 +93,10 @@ function contexto(caso: Caso, perfil: PerfilMunicipio): string {
     `\n# Laudo: ${laudo?.tipo ?? '?'}, ${laudo?.data ?? '?'}, categoria ${laudo?.categoria ?? '?'}, área útil ${laudo?.area_util_m2 ?? '?'} m², ${laudo?.total_fotos ?? '?'} fotos`,
     ...(laudo?.ambientes ?? []).map((a) => `\n## ${a.numero}. ${a.nome}\n${a.observacoes.join('\n')}`),
     ...(laudo?.observacoes_gerais.length ? [`\n## Observações gerais\n${laudo.observacoes_gerais.join('\n')}`] : []),
+    ...(caso.registro?.descricao_construcao
+      ? [`\n# Registro de imóveis (${caso.registro.documentos})\nDescrição da construção na matrícula: ${caso.registro.descricao_construcao}` +
+        (caso.registro.averbacoes_construcao.length ? `\nAverbações: ${caso.registro.averbacoes_construcao.join('; ')}` : '\nSem averbação de construção.')]
+      : []),
   ].join('\n');
 }
 

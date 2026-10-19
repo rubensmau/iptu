@@ -1,13 +1,13 @@
 import { randomUUID } from 'node:crypto';
 import express, { Router } from 'express';
-import { cenarios, simular, valorImplicito, type Cenario } from '../calc.js';
+import { simular, valorImplicito, type Cenario } from '../calc.js';
 import { classificar, recalcularEfeitos, type ResultadoClassificacao } from '../classificar.js';
-import { montarCaso } from '../cruzamento.js';
+import { conferirRegistro, montarCaso } from '../cruzamento.js';
 import { extrairDocumento } from '../extrair/index.js';
 import { lacunas } from '../lacunas.js';
 import { gerarRequerimento, nomeRequerimento } from '../requerimento.js';
 import { perfil, perfilPorCidade, perfis } from '../municipios.js';
-import type { Caso, Extracao } from '../tipos.js';
+import type { Caso, Extracao, Registro } from '../tipos.js';
 
 const router = Router();
 const temChave = () => Boolean(process.env.ANTHROPIC_API_KEY);
@@ -31,7 +31,7 @@ router.post('/documentos', express.raw({ type: 'application/pdf', limit: '30mb' 
   const nome = decodeURIComponent(String(req.get('X-Nome-Arquivo') ?? 'documento.pdf'));
   const usarIA = req.query.ia === '1' && temChave();
   try {
-    res.json(await extrairDocumento(new Uint8Array(req.body), nome, usarIA));
+    res.json(await extrairDocumento(new Uint8Array(req.body), nome, usarIA, String(req.query.tipo ?? '') || undefined));
   } catch (e) {
     res.status(500).json({ error: `falha ao ler ${nome}: ${(e as Error).message}` });
   }
@@ -62,7 +62,6 @@ router.post('/simular', express.json({ limit: '5mb' }), (req, res) => {
   try {
     res.json({
       simulacao: cenario.padrao && cenario.conservacao ? simular(caso, p, cenario) : null,
-      cenarios: cenarios(caso, p),
       implicito: valorImplicito(caso, p),
     });
   } catch (e) {
@@ -81,6 +80,14 @@ router.post('/classificacoes/recalculo', express.json({ limit: '5mb' }), (req, r
   } catch (e) {
     res.status(422).json({ error: (e as Error).message });
   }
+});
+
+// Matrícula/escritura enviada depois de montado o caso: só os alertas da conferência.
+router.post('/registro/conferencia', express.json({ limit: '5mb' }), (req, res) => {
+  const caso: Caso = req.body?.caso;
+  const registro: Registro = req.body?.registro;
+  if (!caso || !registro) return res.status(400).json({ error: 'envie o caso e o registro' });
+  res.json({ alertas: conferirRegistro(caso, registro) });
 });
 
 // O que falta para protocolar; a tela mostra no passo 5.

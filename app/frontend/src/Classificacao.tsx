@@ -112,15 +112,17 @@ export default function Classificacao({ caso, municipio, iaDisponivel, aoMudar }
               title="Lê as observações do laudo e sugere o enquadramento. Leva 1–2 minutos e custa ~US$ 0,20.">
               {trabalho ? `Analisando o laudo… ${trabalho.segundos} s` : cl.caracteristicas.length ? 'Sugerir de novo (IA)' : 'Sugerir pelo laudo (IA)'}
             </button>
-            <button onClick={recalcular} disabled={!!trabalho || !cl.tipologia || !cl.padrao}
-              title="Refaz o efeito de cada estado de conservação no IPTU e o alerta de risco com os ambientes e áreas da tela. Não chama a IA.">
-              Recalcular valores
-            </button>
           </div>
           {padroes.length <= 1 && cl.tipologia && (
             <p className="fraco">O perfil de {municipio.nome} só tem {padroes.length} padrão para {cl.tipologia}: a lei (Anexos II e IV) ainda não foi levantada por completo.</p>
           )}
           <Blocos caso={caso} municipio={municipio} aoMudar={aoMudar} />
+          <div className="linha">
+            <button onClick={recalcular} disabled={!!trabalho || !cl.tipologia || !cl.padrao}
+              title="Refaz o efeito de cada estado de conservação no IPTU e o alerta de risco com os ambientes e áreas da tela. Não chama a IA.">
+              Recalcular valores
+            </button>
+          </div>
         </>
       )}
       {erro && <p className="erro">{erro}</p>}

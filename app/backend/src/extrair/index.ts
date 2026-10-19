@@ -4,6 +4,7 @@ import { extrairCarneMogiMirim, reconheceCarneMogiMirim } from './carne-mogi-mir
 import { extrairComIA } from './generico-ia.js';
 import { extrairLaudoMsys, reconheceLaudoMsys } from './laudo-msys.js';
 import { abrirPdf } from './pdf.js';
+import { extrairRegistroComIA } from './registro-ia.js';
 
 const EXTRATORES = [
   { nome: 'laudo MSYS', reconhece: reconheceLaudoMsys, extrai: extrairLaudoMsys },
@@ -16,7 +17,12 @@ export interface ResultadoExtracao {
   erro?: string;
 }
 
-export async function extrairDocumento(dados: Uint8Array, nomeArquivo: string, usarIA = false): Promise<ResultadoExtracao> {
+/** `tipo` é a vaga da tela; matrícula e escritura sempre vão para a IA (costumam ser digitalizadas). */
+export async function extrairDocumento(dados: Uint8Array, nomeArquivo: string, usarIA = false, tipo?: string): Promise<ResultadoExtracao> {
+  if (tipo === 'registro') {
+    if (!usarIA) return { extracao: null, metodo: 'nenhum', erro: 'matrícula e escritura só são lidas por IA (habilite a leitura por IA)' };
+    return { extracao: await extrairRegistroComIA(dados, nomeArquivo), metodo: 'ia' };
+  }
   let pdf;
   try {
     // o pdf.js toma posse do buffer; manda uma cópia para sobrar o original para a IA

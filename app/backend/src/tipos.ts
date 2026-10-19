@@ -11,6 +11,7 @@ export type Fonte =
   | 'laudo'       // laudo de vistoria (ex.: MSYS)
   | 'carne'       // carnê / documento de arrecadação do IPTU
   | 'bci'         // boletim de cadastro imobiliário / ficha cadastral
+  | 'registro'    // matrícula do Registro de Imóveis / escritura
   | 'legislacao'  // perfil do município
   | 'julgamento'  // classificação sugerida, revisada pelo proprietário
   | 'calculo'
@@ -54,7 +55,8 @@ export interface Tributacao {
 }
 
 export type RefRequerimento =
-  | 'lei_pgv' | 'formula' | 'padrao' | 'conservacao' | 'valores' | 'aliquota' | 'efeito' | 'contraditorio' | 'avaliacao';
+  | 'lei_pgv' | 'formula' | 'padrao' | 'conservacao' | 'valores' | 'aliquota' | 'efeito' | 'contraditorio' | 'avaliacao'
+  | 'atualizacao' | 'pontuacao';
 
 export interface PerfilMunicipio {
   id: string;
@@ -149,6 +151,31 @@ export interface Laudo {
   ambientes: Ambiente[];
 }
 
+/**
+ * Matrícula do Registro de Imóveis e/ou escritura. Não alimenta os campos do caso
+ * (o cadastro da prefeitura vale para o lançamento): serve para conferir o que o
+ * carnê e o laudo dizem — titulares, endereço, inscrição, áreas e preço pago.
+ */
+export interface Registro {
+  documentos: string;               // "matrícula nº 2.004 do CRI de Mogi Mirim; escritura de 27/07/2022"
+  matricula: string | null;
+  cartorio: string | null;
+  proprietarios: Pessoa[];          // titulares atuais (último ato de transmissão)
+  inscricao_cadastral: string | null;
+  endereco: Partial<Endereco>;
+  area_terreno_m2: number | null;
+  medidas_terreno: string | null;   // "12,00 m de frente por 30,00 m da frente aos fundos"
+  descricao_construcao: string | null; // literal, como no registro
+  area_construida_m2: number | null;   // só se houver averbação de construção com área
+  averbacoes_construcao: string[];
+  transacao: {
+    data: string | null;            // AAAA-MM-DD
+    valor: number | null;           // preço pago
+    valor_venal_declarado: number | null; // valor venal citado na escritura (do ano da compra)
+    valor_referencia: number | null;      // valor de referência (ITBI), se citado
+  } | null;
+}
+
 export interface ElementoAvaliado {
   elemento: string;
   evidencias: string;
@@ -203,6 +230,7 @@ export interface Caso {
   imovel: Imovel;
   lancamento: Lancamento;
   laudo: Laudo | null;
+  registro?: Registro | null; // casos montados antes de 2026-10-19 não têm
   classificacao: Classificacao;
   anexos: string[];
   confirmacoes: Confirmacao[];
@@ -222,6 +250,16 @@ export interface Extracao {
   imovel: Partial<Omit<Imovel, 'endereco'>>;
   lancamento: Partial<Lancamento>;
   laudo: Laudo | null;
+  registro?: Registro | null;
   origens: Record<string, Origem>;
   alertas: string[];
 }
+
+// ---------------------------------------------------------------- lacunas
+
+export type Gravidade =
+  | 'bloqueia'   // sem isto o rascunho sai sem o cálculo da revisão
+  | 'preencher'  // dado ou documento que só o proprietário fornece
+  | 'conferir';  // ponto em aberto (lei, prazo, estratégia) — decidir antes de protocolar
+
+export interface Lacuna { gravidade: Gravidade; texto: string }

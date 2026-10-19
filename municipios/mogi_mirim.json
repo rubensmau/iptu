@@ -3,7 +3,7 @@
   "nome": "Mogi Mirim",
   "uf": "SP",
   "exercicio": 2026,
-  "fonte_dados": "Texto oficial da LC 392/2025 e Anexos I a IV, baixados do portal da Prefeitura (mogimirim.sp.gov.br/legislacao/view/30875) em 15/10/2026; taxa de lixo e parcelas tiradas do carnê 2026.",
+  "fonte_dados": "Texto oficial da LC 392/2025 e Anexos I a IV, baixados do portal da Prefeitura (mogimirim.sp.gov.br/legislacao/view/30875) em 15/10/2026; taxa de lixo e parcelas tiradas do carnê 2026. Valores de construção conferidos em 19/10/2026 contra os anexos oficiais e os decretos posteriores (docs/estudos/mogi_mirim_valores_construcao.md).",
   "normas": [
     {
       "id": "lc392",
@@ -21,6 +21,7 @@
         "art. 10": "parcelamento em até 12 prestações; descontos de 10%, 7% ou 5% à vista",
         "art. 11": "atualização da PGV pelo Executivo conforme a EC 132/2023, observados critérios fixados na lei",
         "art. 11, parágrafo único": "contraditório e ampla defesa contra o lançamento decorrente da atualização da PGV, nos termos dos arts. 293 a 308 do CTM",
+        "art. 12, § 1º": "a PGV sujeita-se à atualização monetária anual pelo IPCA, fixada por decreto",
         "art. 12, § 2º": "para 2026 a PGV não sofre atualização monetária",
         "art. 25": "todo processo avaliatório segue, no que couber, a NBR da ABNT de avaliação de imóveis urbanos",
         "art. 27": "modificação cadastral que reduza o imposto só tem efeito no exercício seguinte ao da comunicação, salvo erro inequívoco da Administração ou impugnação tempestiva do lançamento",
@@ -31,7 +32,7 @@
         "Anexo I": "valor unitário do m² de terreno por face de quadra",
         "Anexo II": "valor unitário do m² da construção por tipo e padrão",
         "Anexo III, Tabelas I a V": "fatores de correção dos terrenos (FL, FG, FT, FA); Tabela III corrigida por errata",
-        "Anexo III, Tabela VI": "fator estado de conservação: Bom 1,00; Regular 0,80; Mau 0,50",
+        "Anexo III, Tabela VI": "fator estado de conservação: Bom 1,00; Regular 0,80; Mau 0,50 (a lei não define o que caracteriza cada estado)",
         "Anexo IV": "características construtivas correlacionadas ao padrão de acabamento, por tipologia"
       }
     },
@@ -43,6 +44,30 @@
       "descricao": "Código Tributário Municipal",
       "artigos": {
         "arts. 293 a 308": "processo administrativo tributário (impugnação)"
+      }
+    },
+    {
+      "id": "dec9709",
+      "tipo": "Decreto",
+      "numero": "9.709",
+      "ano": 2025,
+      "descricao": "correção monetária dos tributos para 2026 (IPCA 4,46%), de 10/12/2025",
+      "artigos": {
+        "art. 1º, parágrafo único": "por força do art. 12, § 2º, da LC 392/2025, a PGV de 2026 não é atualizada: os valores do Anexo II valem como publicados"
+      }
+    },
+    {
+      "id": "dec1859",
+      "tipo": "Decreto",
+      "numero": "1.859",
+      "ano": 1984,
+      "descricao": "regulamento do CTM, alterado pelos Decretos 7.565/2017 e 7.801/2018; não revogado pela LC 392/2025",
+      "artigos": {
+        "art. 9º": "mesmos tipos e padrões da LC 392 (Casa: precário, popular, médio, fino, luxo; Telheiro: precário, popular...)",
+        "art. 10, parágrafo único": "o padrão é enquadrado pelos elementos anotados no Cadastro Técnico, obedecida a pontuação da Tabela II",
+        "Tabela II (Casa)": "pontos por elemento, do grau 1 ao 5: estrutura 60/92/110,5/158/165; cobertura 6/14/25,5/34/47,5; esquadrias 5/17/33,9/45,2/65; piso 5/16/27/36/52,5; forro 4/10/13,5/18/19,5; inst. sanitária 2/6/10,2/13,6/22,5; inst. elétrica 7/14/18,6/24,9/27,5; revestimento externo e interno 4/12/20,4/27,2/37,5 cada; acabamento externo 1,5/3,5/6/8/13,5; interno 1,5/3,5/6/8/14",
+        "Tabela II-C": "faixas: Precário até 150 pontos; Popular 151 a 250; Médio 251 a 340; Fino 341 a 430; Luxo acima de 430",
+        "Tabela III-B": "fatores de conservação Bom 1,0; Regular 0,8; Mau 0,5 (redação do Decreto 7.801/2018)"
       }
     },
     {
@@ -163,13 +188,17 @@
       "aliquota": "art. 9º da LC nº 392/2025",
       "efeito": "art. 27 da LC nº 392/2025",
       "contraditorio": "art. 11, parágrafo único, da LC nº 392/2025 e arts. 293 a 308 da Lei Municipal nº 1.431/1983 (CTM)",
-      "avaliacao": "art. 25 da LC nº 392/2025 (NBR da ABNT de avaliação de imóveis urbanos)"
+      "avaliacao": "art. 25 da LC nº 392/2025 (NBR da ABNT de avaliação de imóveis urbanos)",
+    "atualizacao": "art. 12, § 2º, da LC nº 392/2025 e art. 1º, parágrafo único, do Decreto Municipal nº 9.709/2025",
+    "pontuacao": "art. 10, parágrafo único, e Tabela II do Decreto Municipal nº 1.859/1984"
     },
     "fundamentacao": [
       "A Lei Complementar Municipal nº 392/2025 instituiu a Planta Genérica de Valores e integra, em seus Anexos I a IV, os valores unitários dos terrenos, os valores unitários das construções, os fatores corretivos e as características construtivas correlacionadas ao padrão de acabamento.",
       "Nos termos do art. 4º, a base de cálculo do IPTU é o Valor Venal do Imóvel, composto pela soma do Valor Venal do Terreno e do Valor Venal da Construção, apurados segundo a metodologia integrante da própria lei.",
       "O art. 5º, inciso II, determina que o Valor Venal da Construção seja apurado pela fórmula VVC = AC × VM²C × FC, em que AC é a área construída, VM²C é o valor unitário do Anexo II, conforme o tipo e o padrão da construção, e FC é o fator de conservação da Tabela VI do Anexo III. O art. 3º, § 2º, determina a aplicação desse fator, cujos coeficientes são: Bom = 1,00; Regular = 0,80; Mau = 0,50.",
+    "Para o exercício de 2026, os valores unitários do Anexo II aplicam-se tal como publicados: o art. 12, § 2º, da LC nº 392/2025 afastou a atualização monetária da PGV nesse exercício, e o Decreto Municipal nº 9.709/2025, que corrigiu os demais tributos em 4,46%, excluiu expressamente a PGV (art. 1º, parágrafo único). Os decretos de revisão administrativa editados em 2026 alteraram apenas valores do metro quadrado de terreno por face de quadra; nenhuma norma posterior modificou o Anexo II, a Tabela VI do Anexo III ou o Anexo IV.",
       "O art. 32 determina que o padrão seja avaliado conforme as características físicas, arquitetônicas, técnicas, construtivas e funcionais, a idade, o estado de conservação, a qualidade dos materiais e acabamentos, a ventilação, a iluminação, o conforto, a salubridade, a segurança e a robustez da edificação. O § 1º acrescenta, para edificações residenciais, a área, os dormitórios, os sanitários, os pavimentos, os cômodos, as vagas e os itens adicionais. O § 2º exige a análise da quantidade e da predominância desses elementos no conjunto do imóvel. O art. 33 remete ao Anexo IV, que descreve as características de cada tipologia e padrão.",
+    "O Decreto Municipal nº 1.859/1984, que regulamenta o Código Tributário Municipal e não foi revogado pela LC nº 392/2025, adota os mesmos tipos e padrões e determina que o padrão seja enquadrado com base nos elementos anotados no Cadastro Técnico, obedecida a pontuação de sua Tabela II (art. 10, parágrafo único): para o tipo Casa, até 150 pontos corresponde ao padrão Precário e de 151 a 250 pontos ao Popular. Já os fatores de estado de conservação têm os coeficientes fixados em lei, mas não a definição de cada estado. O enquadramento atribuído ao imóvel deve, por isso, vir acompanhado dos elementos e da pontuação que o fundamentam.",
       "O Anexo II distingue a tipologia Telheiro — que o Anexo IV define como construção constituída apenas de cobertura e seus apoios, sem fechamentos laterais — com valores unitários de R$ 269,85/m² (Popular) e R$ 122,66/m² (Precário), muito inferiores aos da tipologia Casa. Coberturas acessórias com essas características devem, portanto, ser enquadradas e medidas separadamente do corpo principal da edificação.",
       "O art. 9º estabelece alíquota de 0,35% para valor venal de até R$ 150.000,00 e de 0,40% entre R$ 150.000,01 e R$ 300.000,00, aplicável ao imposto predial e ao territorial. Por isso, eventual redução do valor venal total para patamar inferior a R$ 150.000,00 também altera a faixa de alíquota.",
       "O art. 25 determina que todo processo avaliatório siga, no que couber, a norma da ABNT de avaliação de imóveis urbanos, e o art. 156, § 1º, III, da Constituição Federal, na redação da Emenda Constitucional nº 132/2023 (a que se refere o art. 11 da LC nº 392/2025), condiciona a fixação da base de cálculo a critérios estabelecidos em lei municipal. O enquadramento do imóvel deve, portanto, decorrer da aplicação objetiva desses critérios e ser demonstrado ao contribuinte.",
@@ -177,8 +206,8 @@
     ]
   },
   "pendencias": [
-    "Conferir as alterações posteriores da LC 392/2025 (LC 400/2025, LC 412/2026 e LC 414/2026; pelos títulos, mudam os arts. 8º e 14) — não lidas",
-    "Prazo de impugnação e canal de protocolo (CTM, arts. 293 a 308; presencial ou online) — não levantados",
+    "Prazo de impugnação e canal de protocolo (CTM, arts. 293 a 308; presencial ou online) — não levantados; o texto da Lei 1.431/1983 ainda não foi obtido (o ctm.pdf recebido é a LC 192/2005, do ISS)",
+    "Tabela II do Decreto 1.859/1984: conferir no original o forro do grau 5 (19,5 ou 17,5) e perguntar à Prefeitura se a pontuação ainda é usada no cadastro",
     "Anexo I (valor do m² por face de quadra, 422 páginas) e fatores do terreno não foram usados: o VVT lançado é mantido",
     "Valores e parcelas da taxa de lixo vêm do carnê 2026, não de lei"
   ]
