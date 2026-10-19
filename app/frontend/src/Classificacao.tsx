@@ -49,6 +49,15 @@ export default function Classificacao({ caso, municipio, iaDisponivel, aoMudar }
     try { const { id } = await api.classificar(caso); setTrabalho({ id, segundos: 0 }) } catch (e) { setErro((e as Error).message) }
   }
 
+  // valores refeitos com padrão, blocos e áreas da tela, sem chamar a IA
+  async function recalcular() {
+    setErro(null)
+    try {
+      const r = await api.recalcular(caso)
+      aoMudar({ ...caso, confirmacoes: r.confirmacoes, alertas: [...caso.alertas.filter((a) => !a.startsWith('Risco:')), ...r.alertas] })
+    } catch (e) { setErro((e as Error).message) }
+  }
+
   function escolhe(campo: 'tipologia' | 'padrao' | 'conservacao', valor: string) {
     aoMudar({
       ...poe(caso, `classificacao.${campo}`, valor || null),
@@ -102,6 +111,10 @@ export default function Classificacao({ caso, municipio, iaDisponivel, aoMudar }
             <button className="primario" onClick={sugerir} disabled={!iaDisponivel || !!trabalho || !caso.laudo?.ambientes.length}
               title="Lê as observações do laudo e sugere o enquadramento. Leva 1–2 minutos e custa ~US$ 0,20.">
               {trabalho ? `Analisando o laudo… ${trabalho.segundos} s` : cl.caracteristicas.length ? 'Sugerir de novo (IA)' : 'Sugerir pelo laudo (IA)'}
+            </button>
+            <button onClick={recalcular} disabled={!!trabalho || !cl.tipologia || !cl.padrao}
+              title="Refaz o efeito de cada estado de conservação no IPTU e o alerta de risco com os ambientes e áreas da tela. Não chama a IA.">
+              Recalcular valores
             </button>
           </div>
           {padroes.length <= 1 && cl.tipologia && (

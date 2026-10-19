@@ -1,7 +1,7 @@
 import { randomUUID } from 'node:crypto';
 import express, { Router } from 'express';
 import { cenarios, simular, valorImplicito, type Cenario } from '../calc.js';
-import { classificar, type ResultadoClassificacao } from '../classificar.js';
+import { classificar, recalcularEfeitos, type ResultadoClassificacao } from '../classificar.js';
 import { montarCaso } from '../cruzamento.js';
 import { extrairDocumento } from '../extrair/index.js';
 import { lacunas } from '../lacunas.js';
@@ -65,6 +65,19 @@ router.post('/simular', express.json({ limit: '5mb' }), (req, res) => {
       cenarios: cenarios(caso, p),
       implicito: valorImplicito(caso, p),
     });
+  } catch (e) {
+    res.status(422).json({ error: (e as Error).message });
+  }
+});
+
+// Refaz os valores do passo 3 (efeito da conservação, alerta de risco) após o
+// proprietário mudar padrão, blocos ou áreas — conta pura, sem IA.
+router.post('/classificacoes/recalculo', express.json({ limit: '5mb' }), (req, res) => {
+  const caso: Caso = req.body?.caso;
+  const p = caso && perfil(caso.municipio);
+  if (!p) return res.status(422).json({ error: 'município sem perfil cadastrado' });
+  try {
+    res.json(recalcularEfeitos(caso, p));
   } catch (e) {
     res.status(422).json({ error: (e as Error).message });
   }

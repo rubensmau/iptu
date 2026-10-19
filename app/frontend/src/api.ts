@@ -49,6 +49,7 @@ export const api = {
   caso: (extracoes: Extracao[], municipio?: string) => pede<{ caso: Caso }>('/caso', json({ extracoes, municipio })),
   simular: (caso: Caso) => pede<RespostaSimulacao>('/simular', json({ caso })),
   classificar: (caso: Caso) => pede<{ id: string }>('/classificacoes', json({ caso })),
+  recalcular: (caso: Caso) => pede<{ confirmacoes: Confirmacao[]; alertas: string[] }>('/classificacoes/recalculo', json({ caso })),
   trabalho: (id: string) => pede<Trabalho>(`/classificacoes/${id}`),
   lacunas: (caso: Caso) => pede<{ lacunas: Lacuna[] }>('/lacunas', json({ caso })),
   /** Baixa o rascunho do requerimento (.docx). */

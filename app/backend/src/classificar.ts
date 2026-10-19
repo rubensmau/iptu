@@ -97,7 +97,7 @@ function contexto(caso: Caso, perfil: PerfilMunicipio): string {
 
 const laudoCategoria = (caso: Caso) => caso.laudo?.categoria ?? null;
 
-/** Efeito no IPTU de cada estado de conservação, para o padrão sugerido. */
+/** Efeito no IPTU de cada estado de conservação, para o padrão dado. */
 function impactoConservacao(caso: Caso, perfil: PerfilMunicipio, tipologia: string, padrao: string, acessorias: BlocoConstrucao[]): Record<string, string> {
   const out: Record<string, string> = {};
   for (const estado of Object.keys(perfil.fatores_conservacao)) {
@@ -109,6 +109,33 @@ function impactoConservacao(caso: Caso, perfil: PerfilMunicipio, tipologia: stri
     } catch { /* padrão sem valor no perfil */ }
   }
   return out;
+}
+
+/** Põe o efeito de cada opção na pergunta de conservação; as respostas ficam como estão. */
+function comImpacto(confirmacoes: Confirmacao[], impacto: Record<string, string>, perfil: PerfilMunicipio): Confirmacao[] {
+  const estados = Object.keys(perfil.fatores_conservacao);
+  const chave = (opcao: string) => estados.find((v) => opcao === v || opcao.startsWith(`${v} `) || opcao.startsWith(`${v}(`));
+  return confirmacoes.map((c) => c.id !== 'conservacao' ? c : {
+    ...c, impacto: c.opcoes.map((o) => impacto[chave(o) ?? '']).filter(Boolean).join('; ') || null,
+  });
+}
+
+function alertaRisco(impacto: Record<string, string>): string[] {
+  const piores = Object.entries(impacto).filter(([, t]) => t.includes('AUMENTO'));
+  if (!piores.length) return [];
+  return [`Risco: se a vistoria da prefeitura concluir ${piores.map(([e]) => e).join(' ou ')}, o IPTU sobe — ` +
+    `${piores.map(([, t]) => t).join('; ')}. O lançamento atual já está abaixo desse cenário.`];
+}
+
+/**
+ * Refaz os valores da classificação (efeito de cada estado de conservação e alerta
+ * de risco) com o que está na tela agora — padrão, blocos e áreas —, sem chamar o modelo.
+ */
+export function recalcularEfeitos(caso: Caso, perfil: PerfilMunicipio): { confirmacoes: Confirmacao[]; alertas: string[] } {
+  const c = caso.classificacao;
+  if (!c.tipologia || !c.padrao) throw new Error('escolha tipologia e padrão antes de recalcular');
+  const impacto = impactoConservacao(caso, perfil, c.tipologia, c.padrao, c.acessorias ?? []);
+  return { confirmacoes: comImpacto(caso.confirmacoes, impacto, perfil), alertas: alertaRisco(impacto) };
 }
 
 export interface ResultadoClassificacao {
@@ -140,20 +167,10 @@ export async function classificar(caso: Caso, perfil: PerfilMunicipio, client = 
     area_m2: caso.classificacao.acessorias?.find((b) => normaliza(b.descricao) === normaliza(a.descricao))?.area_m2 ?? null,
   }));
   const impacto = impactoConservacao(caso, perfil, r.tipologia, r.padrao, acessorias);
-  const chave = (opcao: string, validas: string[]) =>
-    validas.find((v) => opcao === v || opcao.startsWith(`${v} `) || opcao.startsWith(`${v}(`)) ?? null;
-  const estados = Object.keys(perfil.fatores_conservacao);
   const campos: Record<string, string> = {
     padrao: 'classificacao.padrao', conservacao: 'classificacao.conservacao', tipologia: 'classificacao.tipologia',
   };
-  const confirmacoes: Confirmacao[] = r.confirmacoes.map((c) => ({
-    ...c,
-    campo: campos[c.id] ?? null,
-    impacto: c.id === 'conservacao'
-      ? c.opcoes.map((o) => impacto[chave(o, estados) ?? '']).filter(Boolean).join('; ') || null
-      : null,
-    resposta: null,
-  }));
+  const confirmacoes: Confirmacao[] = r.confirmacoes.map((c) => ({ ...c, campo: campos[c.id] ?? null, impacto: null, resposta: null }));
   // a conservação sempre é perguntada, mesmo que o modelo não tenha listado
   if (!confirmacoes.some((c) => c.id === 'conservacao')) {
     confirmacoes.unshift({
@@ -161,15 +178,8 @@ export async function classificar(caso: Caso, perfil: PerfilMunicipio, client = 
       pergunta: 'Qual o estado de conservação do imóvel, no conjunto?',
       opcoes: Object.keys(perfil.fatores_conservacao), sugestao: r.conservacao,
       justificativa: r.estado.map((e) => `${e.elemento}: ${e.conclusao}`).join(' '),
-      impacto: Object.values(impacto).join('; ') || null, resposta: null,
+      impacto: null, resposta: null,
     });
-  }
-
-  const alertas: string[] = [];
-  const piores = Object.entries(impacto).filter(([, t]) => t.includes('AUMENTO'));
-  if (piores.length) {
-    alertas.push(`Risco: se a vistoria da prefeitura concluir ${piores.map(([e]) => e).join(' ou ')}, o IPTU sobe — ` +
-      `${piores.map(([, t]) => t).join('; ')}. O lançamento atual já está abaixo desse cenário.`);
   }
 
   return {
@@ -178,8 +188,8 @@ export async function classificar(caso: Caso, perfil: PerfilMunicipio, client = 
       caracteristicas: r.caracteristicas, estado: r.estado, areas_acessorias: r.areas_acessorias, acessorias,
       confianca: r.confianca, pontos_fracos: r.pontos_fracos,
     },
-    confirmacoes,
-    alertas,
+    confirmacoes: comImpacto(confirmacoes, impacto, perfil),
+    alertas: alertaRisco(impacto),
     uso: { entrada: resp.usage.input_tokens, saida: resp.usage.output_tokens, modelo: resp.model },
   };
 }
