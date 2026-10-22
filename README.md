@@ -34,6 +34,7 @@ Nada de processo Python na VPS — RAM de 1,9 GB.
 | `docs/analise_exemplo_mogi_mirim.md` | de onde veio cada dado do requerimento-exemplo |
 | `docs/respostas_socio_v1.md`, `docs/aprendizados_2026-10-15.md` | dúvidas respondidas pelo sócio, o que mudou no app e as lacunas abertas |
 | `docs/aprendizados_2026-10-19.md` | legislação conferida, matrícula/escritura, valor de mercado e a lista de pendências |
+| `docs/aprendizados_2026-10-22.md` | área medida na vistoria × área do cadastro: ajuste proporcional dos blocos |
 | `docs/estudos/` | fundamentação dos valores de construção: método genérico, estudo de Mogi Mirim para a Prefeitura e notas internas |
 | `docs/expansao_cidades.md` | quadro legal (Tema 1.113, EC 132) e cidades candidatas |
 

@@ -7,7 +7,7 @@ const pct = (a: number) => `${(a * 100).toFixed(2).replace('.', ',')}%`
 export default function Simulacao({ caso }: { caso: Caso }) {
   const [r, setR] = useState<RespostaSimulacao | null>(null)
   const [erro, setErro] = useState<string | null>(null)
-  const chave = JSON.stringify([caso.classificacao.tipologia, caso.classificacao.padrao, caso.classificacao.conservacao, caso.classificacao.acessorias, caso.imovel, caso.lancamento])
+  const chave = JSON.stringify([caso.classificacao.tipologia, caso.classificacao.padrao, caso.classificacao.conservacao, caso.classificacao.acessorias, caso.classificacao.area_principal_m2, caso.imovel, caso.lancamento])
 
   useEffect(() => {
     let vivo = true
@@ -21,7 +21,7 @@ export default function Simulacao({ caso }: { caso: Caso }) {
   const hipoteses = (r?.implicito?.blocos ?? []).filter((b) => !s || b.padrao === s.cenario.padrao)
   const l = caso.lancamento
   return (
-    <section className="cartao">
+    <section className="cartao" id="simulacao">
       <h2>4. Simulação</h2>
       {erro && <p className="erro">{erro}</p>}
       {!s && !erro && <p className="fraco">Escolha tipologia, padrão e conservação para simular.</p>}
@@ -47,6 +47,12 @@ export default function Simulacao({ caso }: { caso: Caso }) {
             <p className="aviso">O recálculo do lançamento pelas regras do perfil dá {brl(s.atual.iptu_anual)}, mas o carnê diz {brl(l.iptu_anual)} — confira o perfil do município.</p>
           )}
           <h3>Memória de cálculo</h3>
+          {s.memoria_ajuste?.length > 0 && (
+            <>
+              <p className="fraco">Ajuste das áreas da vistoria à área do cadastro (só nesta memória; o requerimento menciona apenas a divergência):</p>
+              <ul>{s.memoria_ajuste.map((m, i) => <li key={i}>{m}</li>)}</ul>
+            </>
+          )}
           <ul>{s.memoria.map((m, i) => <li key={i}>{m}</li>)}</ul>
         </>
       )}

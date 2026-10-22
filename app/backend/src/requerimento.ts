@@ -106,6 +106,8 @@ function montarDocumento(caso: Caso, perfil: PerfilMunicipio, hoje: Date, final:
   const laudo = descricaoLaudo(caso);
   const implicito = valorImplicito(caso, perfil);
   const acessorias = c.acessorias ?? [];
+  // área do bloco como entra no cálculo (já levada à área do cadastro, se a vistoria divergir)
+  const areaBloco = (b: (typeof acessorias)[number]) => sim?.blocos.find((x, i) => i > 0 && x.descricao === b.descricao)?.area_m2 ?? b.area_m2;
   const mercado = comparaMercado(caso, perfil.exercicio);
   const excedeMercado = mercado && mercado.excesso > 0 ? mercado : null;
   const corpo: (Paragraph | Table)[] = [];
@@ -194,11 +196,19 @@ function montarDocumento(caso: Caso, perfil: PerfilMunicipio, hoje: Date, final:
   if (acessorias.length) {
     corpo.push(par('Propõe-se classificar a construção por bloco, com o valor de cada um proporcional à sua área:'));
     const areaAcess = acessorias.reduce((s, b) => s + (b.area_m2 ?? 0), 0);
-    const principal = im.area_construida_m2 != null && acessorias.every((b) => b.area_m2) ? m2(im.area_construida_m2 - areaAcess) : null;
+    const principal = sim && sim.blocos.length > 1 ? m2(sim.blocos[0].area_m2)
+      : im.area_construida_m2 != null && acessorias.every((b) => b.area_m2) ? m2(im.area_construida_m2 - areaAcess) : null;
     corpo.push(tabela(['Bloco', 'Ambientes do laudo', 'Enquadramento', 'Área'], [
       ['Corpo principal', 'demais ambientes', `${c.tipologia ?? '?'} ${c.padrao ?? '?'}, ${c.conservacao ?? '?'}`, [ou(principal, 'área restante')]],
-      ...acessorias.map((b) => [b.descricao, b.ambientes ?? '—', `${b.tipologia} ${b.padrao}, ${b.conservacao}`, [ou(m2(b.area_m2), `área de ${b.descricao.toLowerCase()}`)]] as (Trecho[] | string)[]),
+      ...acessorias.map((b) => [b.descricao, b.ambientes ?? '—', `${b.tipologia} ${b.padrao}, ${b.conservacao}`, [ou(m2(areaBloco(b)), `área de ${b.descricao.toLowerCase()}`)]] as (Trecho[] | string)[]),
     ], [22, 30, 30, 18]));
+    // a conta do ajuste fica só na memória da tela: aqui, apenas a divergência
+    if (sim?.ajuste_area) {
+      const a = sim.ajuste_area;
+      corpo.push(par(`As áreas medidas na vistoria somam ${num(a.area_vistoria)} m², ao passo que o cadastro municipal considera ${num(a.area_cadastro)} m² de área construída. ` +
+        'Como o lançamento se baseia na área cadastral, a classificação por bloco e a simulação a adotam, sem reconhecer definitivamente sua correção; ' +
+        'a divergência reforça o pedido de confirmação do critério de medição e de apresentação do croqui cadastral.'));
+    }
   } else if (c.areas_acessorias) {
     corpo.push(par(c.areas_acessorias));
   } else {
@@ -246,7 +256,7 @@ function montarDocumento(caso: Caso, perfil: PerfilMunicipio, hoje: Date, final:
     [t('a avaliação do estado de conservação como '), c.conservacao ? t(`${c.conservacao}, com FC = ${num(perfil.fatores_conservacao[c.conservacao] ?? NaN)}`) : falta('estado de conservação'), t(`, conforme ${ref('conservacao')};`)],
     acessorias.length
       ? [t('a individualização cadastral e o enquadramento separado de '),
-        ...acessorias.flatMap((b, i) => [t(`${i ? (i === acessorias.length - 1 ? ' e ' : ', ') : ''}${b.descricao.toLowerCase()} como ${b.tipologia} ${b.padrao}, estado ${b.conservacao} (`), ou(m2(b.area_m2), 'área'), t(')')]),
+        ...acessorias.flatMap((b, i) => [t(`${i ? (i === acessorias.length - 1 ? ' e ' : ', ') : ''}${b.descricao.toLowerCase()} como ${b.tipologia} ${b.padrao}, estado ${b.conservacao} (`), ou(m2(areaBloco(b)), 'área'), t(')')]),
         t(', com o valor de cada bloco proporcional à sua área;')]
       : [t('a individualização cadastral da garagem, da área de serviço e de outras coberturas, classificando-as conforme a tipologia e o padrão efetivamente observados, inclusive Telheiro, se cabível;')],
     [t(`a confirmação do critério de medição dos ${num(im.area_construida_m2 ?? NaN)} m² e a apresentação do croqui ou polígono cadastral utilizado;`)],

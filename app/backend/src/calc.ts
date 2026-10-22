@@ -3,6 +3,8 @@
 // VVC = AC × VM²C × FC (Mogi Mirim: LC 392/2025, art. 5º, II); VVI = VVT + VVC;
 // com blocos acessórios (garagem, área de serviço como Telheiro...), o VVC é a soma
 // de cada bloco pela sua área, e o corpo principal fica com a área restante;
+// vale a área do cadastro: se a vistoria mediu também o corpo principal e a soma
+// medida diverge dela, cada área medida é multiplicada por cadastro ÷ vistoria;
 // a alíquota sai da faixa do VVI e vale para as duas parcelas do imposto
 // (territorial e predial). Com arredondamento "por_parcela", cada parcela mensal
 // é arredondada e o anual é parcela × n — é assim que o carnê de Mogi Mirim fecha.
@@ -32,6 +34,14 @@ export interface BlocoCalculado {
   vvc: number;
 }
 
+/** Áreas da vistoria levadas à área do cadastro (que é a base do lançamento). */
+export interface AjusteArea {
+  area_cadastro: number;
+  area_vistoria: number;   // corpo principal + blocos medidos
+  fator: number;           // cadastro ÷ vistoria
+  blocos: { descricao: string; medida: number; ajustada: number }[];
+}
+
 export interface Tributos {
   valor_venal_terreno: number;
   valor_venal_edificacao: number;
@@ -46,7 +56,8 @@ export interface Tributos {
 
 export interface Simulacao {
   cenario: Required<Cenario>;
-  blocos: BlocoCalculado[];   // [0] = corpo principal; os demais, acessórios
+  blocos: BlocoCalculado[];   // [0] = corpo principal; os demais, acessórios (áreas já ajustadas)
+  ajuste_area: AjusteArea | null; // só quando a área medida na vistoria diverge do cadastro
   valor_m2_tabela: number;    // do corpo principal
   fator_conservacao: number;
   valor_m2_efetivo: number;
@@ -56,6 +67,7 @@ export interface Simulacao {
   reducao_iptu: number | null;
   reducao_total: number | null;
   memoria: string[];          // linhas prontas para o requerimento
+  memoria_ajuste: string[];   // o ajuste das áreas: só na memória da tela, não no requerimento
 }
 
 export const faixaDe = (perfil: PerfilMunicipio, vvi: number): FaixaAliquota => {
@@ -106,10 +118,19 @@ export function simular(caso: Caso, perfil: PerfilMunicipio, c: Cenario): Simula
   const vvt = c.valor_venal_terreno ?? caso.lancamento.valor_venal_terreno;
   if (area == null) throw new Error('falta a área construída');
   if (vvt == null) throw new Error('falta o valor venal do terreno');
-  const acessorias = acessoriasValidas(c.acessorias, perfil);
+  const medidas = acessoriasValidas(c.acessorias, perfil);
+  const principalMedido = caso.classificacao.area_principal_m2 ?? null;
+  const areaVistoria = principalMedido && principalMedido > 0 ? r2(principalMedido + medidas.reduce((t, b) => t + b.area_m2!, 0)) : null;
+  const fator = areaVistoria != null && Math.abs(areaVistoria - area) >= 0.01 ? area / areaVistoria : 1;
+  const acessorias = medidas.map((b) => ({ ...b, area_m2: r2(b.area_m2! * fator) }));
   const areaAcessorias = r2(acessorias.reduce((t, b) => t + b.area_m2!, 0));
   const areaPrincipal = r2(area - areaAcessorias);
-  if (areaPrincipal <= 0) throw new Error(`as áreas acessórias (${num(areaAcessorias)} m²) somam mais que a área construída (${num(area)} m²)`);
+  if (areaPrincipal <= 0) throw new Error(`as áreas acessórias (${num(areaAcessorias)} m²) somam mais que a área construída (${num(area)} m²) — informe também a área medida do corpo principal para ajustá-las à área do cadastro`);
+  const ajuste: AjusteArea | null = fator === 1 ? null : {
+    area_cadastro: area, area_vistoria: areaVistoria!, fator,
+    blocos: [{ descricao: 'Corpo principal', medida: principalMedido!, ajustada: areaPrincipal },
+      ...medidas.map((b, i) => ({ descricao: b.descricao, medida: b.area_m2!, ajustada: acessorias[i].area_m2! }))],
+  };
 
   const principal = bloco(perfil, acessorias.length ? 'Corpo principal' : 'Construção', c.tipologia, c.padrao, c.conservacao, areaPrincipal);
   const blocos = [principal, ...acessorias.map((b) => bloco(perfil, b.descricao, b.tipologia, b.padrao, b.conservacao, b.area_m2!))];
@@ -143,9 +164,15 @@ export function simular(caso: Caso, perfil: PerfilMunicipio, c: Cenario): Simula
       ? `IPTU revisado: (${brl(revisado.territorial_mensal)} territorial + ${brl(revisado.predial_mensal!)} predial) × ${perfil.tributacao.parcelas} parcelas = ${brl(revisado.iptu_anual)}, alíquota de ${pct(revisado.faixa.aliquota)} (${revisado.faixa.ref}).`
       : `IPTU revisado: ${brl(revisado.valor_venal_imovel)} × ${pct(revisado.faixa.aliquota)} = ${brl(revisado.iptu_anual)} (${revisado.faixa.ref}).`,
   );
+  const f4 = (x: number) => x.toLocaleString('pt-BR', { minimumFractionDigits: 4, maximumFractionDigits: 4 });
+  const memoria_ajuste = ajuste ? [
+    `Área medida na vistoria: ${ajuste.blocos.map((b) => num(b.medida)).join(' + ')} = ${num(ajuste.area_vistoria)} m²; área construída do cadastro: ${num(area)} m² (${pct(area / ajuste.area_vistoria - 1).replace(/^(?!-)/, '+')}). Vale a do cadastro.`,
+    `Fator de ajuste das áreas: ${num(area)} ÷ ${num(ajuste.area_vistoria)} = ${f4(fator)}.`,
+    ...ajuste.blocos.map((b, i) => `${b.descricao}: ${num(b.medida)} m² × ${f4(fator)} ${i ? '=' : '≈'} ${num(b.ajustada)} m²${i ? '' : ' (área do cadastro menos os demais blocos)'}.`),
+  ] : [];
   return {
     cenario: { ...c, area_m2: area, valor_venal_terreno: vvt, acessorias },
-    blocos,
+    blocos, ajuste_area: ajuste, memoria_ajuste,
     valor_m2_tabela: principal.valor_m2_tabela, fator_conservacao: principal.fator_conservacao, valor_m2_efetivo: principal.valor_m2_efetivo,
     revisado, atual,
     reducao_vvi: vviLancado != null ? r2(vviLancado - revisado.valor_venal_imovel) : null,

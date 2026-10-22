@@ -205,6 +205,9 @@ export interface Classificacao {
   estado: ElementoAvaliado[];          // quadro 3.2
   areas_acessorias: string | null;     // garagem, área de serviço → Telheiro?
   acessorias?: BlocoConstrucao[];      // blocos enquadrados à parte; a área deles sai do corpo principal
+  // área do corpo principal medida na vistoria. Com ela, a soma medida (corpo + blocos) é
+  // comparada com a área do cadastro; se divergir, todas as áreas são ajustadas na proporção
+  area_principal_m2?: number | null;
   confianca: 'alta' | 'media' | 'baixa' | null;
   pontos_fracos: string[]; // o que a prefeitura pode usar contra o pedido
 }

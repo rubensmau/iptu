@@ -14,9 +14,12 @@ export default function Classificacao({ caso, municipio, iaDisponivel, aoMudar }
 }) {
   const [trabalho, setTrabalho] = useState<{ id: string; segundos: number } | null>(null)
   const [erro, setErro] = useState<string | null>(null)
+  const [recalculado, setRecalculado] = useState<string | null>(null) // hora do último recálculo
   const casoRef = useRef(caso)
   casoRef.current = caso
   const cl = caso.classificacao
+  // mexeu na classificação depois do recálculo: a confirmação deixa de valer
+  useEffect(() => setRecalculado(null), [cl])
 
   useEffect(() => {
     if (!trabalho) return
@@ -51,10 +54,11 @@ export default function Classificacao({ caso, municipio, iaDisponivel, aoMudar }
 
   // valores refeitos com padrão, blocos e áreas da tela, sem chamar a IA
   async function recalcular() {
-    setErro(null)
+    setErro(null); setRecalculado(null)
     try {
       const r = await api.recalcular(caso)
       aoMudar({ ...caso, confirmacoes: r.confirmacoes, alertas: [...caso.alertas.filter((a) => !a.startsWith('Risco:')), ...r.alertas] })
+      setRecalculado(new Date().toLocaleTimeString('pt-BR'))
     } catch (e) { setErro((e as Error).message) }
   }
 
@@ -123,6 +127,13 @@ export default function Classificacao({ caso, municipio, iaDisponivel, aoMudar }
               Recalcular valores
             </button>
           </div>
+          {recalculado && (
+            <p className="ok">
+              ✓ Valores recalculados às {recalculado}. O efeito de cada estado de conservação está na pergunta de conservação, abaixo;
+              o resultado completo (quadro comparativo e memória de cálculo) está no{' '}
+              <a href="#simulacao" onClick={(e) => { e.preventDefault(); document.getElementById('simulacao')?.scrollIntoView({ behavior: 'smooth' }) }}>item 4. Simulação</a>.
+            </p>
+          )}
         </>
       )}
       {erro && <p className="erro">{erro}</p>}
@@ -202,6 +213,10 @@ function Blocos({ caso, municipio, aoMudar }: { caso: Caso; municipio: Municipio
   }
   const total = blocos.reduce((t, b) => t + (b.area_m2 ?? 0), 0)
   const construida = caso.imovel.area_construida_m2
+  const principal = caso.classificacao.area_principal_m2 ?? null
+  const vistoria = principal ? principal + total : null
+  const diverge = vistoria != null && construida != null && Math.abs(vistoria - construida) >= 0.01
+  const lerArea = (texto: string) => (texto.trim() === '' ? null : Number(texto.replace(/\./g, '').replace(',', '.')))
 
   return (
     <div className="confirmacoes">
@@ -209,11 +224,25 @@ function Blocos({ caso, municipio, aoMudar }: { caso: Caso; municipio: Municipio
       <p className="fraco">
         Garagem, área de serviço e outras coberturas podem ter enquadramento próprio (ex.: Telheiro, bem mais barato que Casa).
         O valor de cada bloco é proporcional aos seus m². O laudo não traz a metragem por ambiente: meça e informe a área.
+        Vale a área construída do cadastro: se medir também o corpo principal e a soma divergir do cadastro, as áreas são ajustadas na mesma proporção.
       </p>
       {blocos.length > 0 && (
         <table className="blocos">
           <thead><tr><th>Bloco</th><th>Tipologia</th><th>Padrão</th><th>Conservação</th><th className="num">Área (m²)</th><th /></tr></thead>
           <tbody>
+            <tr>
+              <td>Corpo principal</td>
+              <td colSpan={3} className="fraco">{caso.classificacao.tipologia ?? '—'} {caso.classificacao.padrao ?? ''}, {caso.classificacao.conservacao ?? '—'} · demais ambientes</td>
+              <td className="num">
+                <input className="area" placeholder="opcional" key={`p:${principal}`} defaultValue={principal == null ? '' : num(principal)}
+                  title="Área do corpo principal medida na vistoria. Sem ela, o corpo principal fica com o restante da área do cadastro."
+                  onBlur={(e) => {
+                    const v = lerArea(e.target.value)
+                    if (v === null || (Number.isFinite(v) && v >= 0)) aoMudar({ ...caso, classificacao: { ...caso.classificacao, area_principal_m2: v || null } })
+                  }} />
+              </td>
+              <td />
+            </tr>
             {blocos.map((b, i) => (
               <tr key={i} className={b.area_m2 ? '' : 'falta'} title={b.ambientes ?? ''}>
                 <td><input defaultValue={b.descricao} key={`d${i}:${b.descricao}`} onBlur={(e) => e.target.value !== b.descricao && edita(i, { descricao: e.target.value })} /></td>
@@ -235,7 +264,7 @@ function Blocos({ caso, municipio, aoMudar }: { caso: Caso; municipio: Municipio
                 <td className="num">
                   <input className="area" placeholder="medir" key={`a${i}:${b.area_m2}`} defaultValue={b.area_m2 == null ? '' : num(b.area_m2)}
                     onBlur={(e) => {
-                      const v = e.target.value.trim() === '' ? null : Number(e.target.value.replace(/\./g, '').replace(',', '.'))
+                      const v = lerArea(e.target.value)
                       if (v === null || (Number.isFinite(v) && v >= 0)) edita(i, { area_m2: v || null })
                     }} />
                 </td>
@@ -247,8 +276,14 @@ function Blocos({ caso, municipio, aoMudar }: { caso: Caso; municipio: Municipio
       )}
       <div className="linha">
         <button onClick={adiciona}>+ Adicionar área à parte</button>
-        {blocos.length > 0 && construida != null && (
+        {blocos.length > 0 && construida != null && !diverge && (
           <span className="fraco">Corpo principal: {num(construida - total)} m² de {num(construida)} m² do cadastro{blocos.some((b) => !b.area_m2) && ' (blocos sem área ficam fora do cálculo)'}.</span>
+        )}
+        {diverge && (
+          <span className="aviso">
+            Vistoria: {num(vistoria!)} m² × cadastro: {num(construida!)} m². No cálculo, cada área é multiplicada por {num(construida! / vistoria!, 4)}
+            {' '}(detalhe na memória de cálculo, passo 4); o requerimento só menciona a divergência.
+          </span>
         )}
       </div>
     </div>

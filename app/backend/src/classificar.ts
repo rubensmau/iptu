@@ -191,6 +191,7 @@ export async function classificar(caso: Caso, perfil: PerfilMunicipio, client = 
     classificacao: {
       tipologia: r.tipologia, padrao: r.padrao, conservacao: r.conservacao,
       caracteristicas: r.caracteristicas, estado: r.estado, areas_acessorias: r.areas_acessorias, acessorias,
+      area_principal_m2: caso.classificacao.area_principal_m2 ?? null,
       confianca: r.confianca, pontos_fracos: r.pontos_fracos,
     },
     confirmacoes: comImpacto(confirmacoes, impacto, perfil),
