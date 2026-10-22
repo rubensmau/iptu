@@ -37,6 +37,7 @@ const ESQUEMA = z.object({
   })).describe('só os campos que o documento traz; requerente = proprietário/contribuinte'),
   ambientes: z.array(z.object({
     numero: z.number(), nome: z.string(),
+    area_m2: z.number().nullable().describe('área do ambiente em m², só se o laudo a informar'),
     observacoes: z.array(z.string()).describe('texto literal do laudo, um item por elemento'),
   })).describe('só em laudos; vazio nos demais'),
   observacoes_gerais: z.array(z.string()),

@@ -133,6 +133,7 @@ export interface Ambiente {
   numero: number;
   nome: string;
   observacoes: string[]; // texto literal do laudo, item a item
+  area_m2?: number | null; // só se o laudo medir o ambiente ("2. Garagem (20 m2)")
 }
 
 export interface Laudo {

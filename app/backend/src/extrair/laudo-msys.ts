@@ -104,7 +104,9 @@ export async function extrairLaudoMsys(dados: Uint8Array | Pdf): Promise<Extraca
     if (l === QUEBRA) { fechaItem(); fechaSolto(); continue; }
     if (sec && !it) {
       fechaItem(); fechaSolto();
-      atual = { numero: Number(sec[1]), nome: sec[2].trim(), observacoes: [] };
+      // área medida, quando o laudo a põe no título: "2. Garagem (20 m2)"
+      const area = sec[2].match(/^(.*?)\s*\((\d+(?:[.,]\d+)?)\s*m[²2]\)$/);
+      atual = { numero: Number(sec[1]), nome: (area?.[1] ?? sec[2]).trim(), observacoes: [], area_m2: area ? Number(area[2].replace(',', '.')) : null };
       laudo.ambientes.push(atual);
     } else if (it) {
       fechaItem(); fechaSolto(); item = [l];
@@ -116,6 +118,8 @@ export async function extrairLaudoMsys(dados: Uint8Array | Pdf): Promise<Extraca
   }
   fechaItem(); fechaSolto();
   if (laudo.ambientes.length) origem('laudo.ambientes', `seções 1 a ${laudo.ambientes.length}`);
+  const medidos = laudo.ambientes.filter((a) => a.area_m2);
+  if (medidos.length) origem('laudo.ambientes.area_m2', `títulos de ${medidos.map((a) => `${a.numero}. ${a.nome}`).join(', ')}`);
   else ext.alertas.push('Laudo: nenhum ambiente reconhecido.');
 
   // ---- alertas

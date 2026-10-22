@@ -91,7 +91,7 @@ function contexto(caso: Caso, perfil: PerfilMunicipio): string {
     `\n# Cadastro municipal`,
     `Tipo no cadastro: ${caso.imovel.tipo_cadastro ?? '?'}; área construída ${caso.imovel.area_construida_m2 ?? '?'} m²; terreno ${caso.imovel.area_terreno_m2 ?? '?'} m².`,
     `\n# Laudo: ${laudo?.tipo ?? '?'}, ${laudo?.data ?? '?'}, categoria ${laudo?.categoria ?? '?'}, área útil ${laudo?.area_util_m2 ?? '?'} m², ${laudo?.total_fotos ?? '?'} fotos`,
-    ...(laudo?.ambientes ?? []).map((a) => `\n## ${a.numero}. ${a.nome}\n${a.observacoes.join('\n')}`),
+    ...(laudo?.ambientes ?? []).map((a) => `\n## ${a.numero}. ${a.nome}${a.area_m2 ? ` (área medida: ${a.area_m2} m²)` : ''}\n${a.observacoes.join('\n')}`),
     ...(laudo?.observacoes_gerais.length ? [`\n## Observações gerais\n${laudo.observacoes_gerais.join('\n')}`] : []),
     ...(caso.registro?.descricao_construcao
       ? [`\n# Registro de imóveis (${caso.registro.documentos})\nDescrição da construção na matrícula: ${caso.registro.descricao_construcao}` +
@@ -143,6 +143,29 @@ export function recalcularEfeitos(caso: Caso, perfil: PerfilMunicipio): { confir
   return { confirmacoes: comImpacto(caso.confirmacoes, impacto, perfil), alertas: alertaRisco(impacto) };
 }
 
+/** Números dos ambientes do laudo citados num bloco ("2. Garagem; 11. Área de Serviço"), ou pelo nome. */
+function ambientesDoBloco(caso: Caso, b: Pick<BlocoConstrucao, 'descricao' | 'ambientes'>) {
+  const todos = caso.laudo?.ambientes ?? [];
+  const nums = [...(b.ambientes ?? '').matchAll(/(\d+)\./g)].map((m) => Number(m[1]));
+  const porNumero = todos.filter((a) => nums.includes(a.numero));
+  return porNumero.length ? porNumero : todos.filter((a) => normaliza(a.nome) === normaliza(b.descricao));
+}
+
+/** Soma das áreas medidas no laudo dos ambientes do bloco; null se algum não tiver área. */
+function areaDosAmbientes(caso: Caso, b: Pick<BlocoConstrucao, 'descricao' | 'ambientes'>): number | null {
+  const amb = ambientesDoBloco(caso, b);
+  if (!amb.length || amb.some((a) => !a.area_m2)) return null;
+  return amb.reduce((t, a) => t + a.area_m2!, 0);
+}
+
+/** Área do corpo principal pelo laudo: só se todos os ambientes fora dos blocos tiverem área. */
+function areaDoCorpoPrincipal(caso: Caso, blocos: BlocoConstrucao[]): number | null {
+  const nosBlocos = new Set(blocos.flatMap((b) => ambientesDoBloco(caso, b).map((a) => a.numero)));
+  const resto = (caso.laudo?.ambientes ?? []).filter((a) => !nosBlocos.has(a.numero));
+  if (!resto.length || resto.some((a) => !a.area_m2)) return null;
+  return resto.reduce((t, a) => t + a.area_m2!, 0);
+}
+
 export interface ResultadoClassificacao {
   classificacao: Classificacao;
   confirmacoes: Confirmacao[];
@@ -166,11 +189,14 @@ export async function classificar(caso: Caso, perfil: PerfilMunicipio, client = 
   const r = resp.parsed_output;
   if (!r) throw new Error('resposta sem JSON válido');
 
-  // as áreas dos blocos acessórios quem mede é o proprietário: aproveita as que ele já informou
+  // área dos blocos: a que o proprietário já digitou; senão, a dos ambientes medidos no laudo
   const acessorias: BlocoConstrucao[] = r.acessorias.map((a) => ({
     ...a,
-    area_m2: caso.classificacao.acessorias?.find((b) => normaliza(b.descricao) === normaliza(a.descricao))?.area_m2 ?? null,
+    area_m2: caso.classificacao.acessorias?.find((b) => normaliza(b.descricao) === normaliza(a.descricao))?.area_m2
+      ?? areaDosAmbientes(caso, a) ?? null,
   }));
+  const areaPrincipal = caso.classificacao.area_principal_m2 ?? areaDoCorpoPrincipal(caso, acessorias);
+  if (areaPrincipal != null && caso.classificacao.area_principal_m2 == null) caso = { ...caso, classificacao: { ...caso.classificacao, area_principal_m2: areaPrincipal } };
   const impacto = impactoConservacao(caso, perfil, r.tipologia, r.padrao, acessorias);
   const campos: Record<string, string> = {
     padrao: 'classificacao.padrao', conservacao: 'classificacao.conservacao', tipologia: 'classificacao.tipologia',
@@ -191,7 +217,7 @@ export async function classificar(caso: Caso, perfil: PerfilMunicipio, client = 
     classificacao: {
       tipologia: r.tipologia, padrao: r.padrao, conservacao: r.conservacao,
       caracteristicas: r.caracteristicas, estado: r.estado, areas_acessorias: r.areas_acessorias, acessorias,
-      area_principal_m2: caso.classificacao.area_principal_m2 ?? null,
+      area_principal_m2: areaPrincipal ?? null,
       confianca: r.confianca, pontos_fracos: r.pontos_fracos,
     },
     confirmacoes: comImpacto(confirmacoes, impacto, perfil),

@@ -26,7 +26,33 @@ pela razão **área do cadastro ÷ área da vistoria**, e assim os blocos somam 
 Exemplo (caso Porto, cadastro de 124,12 m²): a vistoria mede 100 + 20 (garagem) + 8 (serviço) = 128 m², o que dá
 um fator de 0,9697 e as áreas 96,97 + 19,39 + 7,76 m².
 
+## Área por ambiente lida do laudo
+
+- O extrator MSYS lê a área quando ela vem no título do ambiente: `2. Garagem (20 m2)` (aceita `m²` e decimais) e
+  grava em `Ambiente.area_m2`; o nome fica sem a área. O extrator genérico por IA ganhou o mesmo campo.
+- Na classificação pela IA, cada bloco sem área digitada recebe a soma das áreas dos ambientes que ele cita
+  (`ambientes: "2. Garagem"`, ou pelo nome). Se **todos** os demais ambientes tiverem área, a soma deles vira a área
+  medida do corpo principal e dispara o ajuste proporcional. Área digitada pelo proprietário prevalece.
+- A IA recebe a área medida junto com o título do ambiente.
+
+Arquivo de teste `laudo_com_area.pdf` (fora do git): cópia do `laudo.pdf` com "(20 m2)" na Garagem e "(30 m2)" na
+Área de Serviço, editado direto no texto do PDF. A fonte embutida não tem vírgula, por isso a área vai sem decimais.
+Teste completo com o carnê e a IA: Garagem 20 m² (Telheiro Popular, Regular), Área de serviço 30 m² (Telheiro
+Precário, Mau), corpo principal 74,12 m², IPTU R$ 394,68. Digitando 80 m² no corpo principal: vistoria de 130 m²,
+fator 0,9548 e áreas de 76,38 + 19,10 + 28,64 m².
+
+## Corpo principal pelo total do laudo
+
+Sem área digitada para o corpo principal, o cálculo usa **área total do laudo − áreas medidas dos blocos** (o MSYS
+traz o total no campo "Área útil" da p. 1, já lido em `laudo.area_util_m2`). Vale também para blocos digitados à mão.
+A tela mostra o valor derivado como sugestão no campo do corpo principal; digitar um valor prevalece.
+
+Caso-exemplo (`laudo_com_area.pdf`): 126,06 − 50,00 = 76,06 m² de corpo principal; vistoria de 126,06 m² × cadastro
+de 124,12 m², fator 0,9846, áreas ajustadas de 74,89 + 19,69 + 29,54 m², VVC R$ 62.757,10. O requerimento só diz
+que as áreas medidas somam 126,06 m² contra 124,12 m² do cadastro.
+
 ## Pendência
 
-- A área útil do laudo (`laudo.area_util_m2`) **não** entra no ajuste: é outro conceito e continua só na
-  "Ressalva sobre a metragem". O ajuste usa apenas as áreas medidas e digitadas por ambiente no passo 3.
+- A área útil do laudo agora é tratada como o total medido na vistoria (decisão do Rubens). Conceitualmente,
+  área útil ≠ área construída: a "Ressalva sobre a metragem" continua no requerimento. O MSYS tem também o campo
+  "Área total" (0.0 no exemplo), ainda não lido; se vier preenchido, talvez deva ter prioridade.

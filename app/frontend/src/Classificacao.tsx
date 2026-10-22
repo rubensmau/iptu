@@ -213,7 +213,11 @@ function Blocos({ caso, municipio, aoMudar }: { caso: Caso; municipio: Municipio
   }
   const total = blocos.reduce((t, b) => t + (b.area_m2 ?? 0), 0)
   const construida = caso.imovel.area_construida_m2
-  const principal = caso.classificacao.area_principal_m2 ?? null
+  const digitado = caso.classificacao.area_principal_m2 ?? null
+  // sem área digitada, o corpo principal medido é o total do laudo menos os blocos medidos (como no cálculo)
+  const totalLaudo = caso.laudo?.area_util_m2 ?? null
+  const doLaudo = digitado == null && totalLaudo != null && total > 0 && totalLaudo > total ? totalLaudo - total : null
+  const principal = digitado ?? doLaudo
   const vistoria = principal ? principal + total : null
   const diverge = vistoria != null && construida != null && Math.abs(vistoria - construida) >= 0.01
   const lerArea = (texto: string) => (texto.trim() === '' ? null : Number(texto.replace(/\./g, '').replace(',', '.')))
@@ -234,8 +238,8 @@ function Blocos({ caso, municipio, aoMudar }: { caso: Caso; municipio: Municipio
               <td>Corpo principal</td>
               <td colSpan={3} className="fraco">{caso.classificacao.tipologia ?? '—'} {caso.classificacao.padrao ?? ''}, {caso.classificacao.conservacao ?? '—'} · demais ambientes</td>
               <td className="num">
-                <input className="area" placeholder="opcional" key={`p:${principal}`} defaultValue={principal == null ? '' : num(principal)}
-                  title="Área do corpo principal medida na vistoria. Sem ela, o corpo principal fica com o restante da área do cadastro."
+                <input className="area" placeholder={doLaudo != null ? `${num(doLaudo)} (laudo)` : 'opcional'} key={`p:${digitado}`} defaultValue={digitado == null ? '' : num(digitado)}
+                  title={`Área do corpo principal medida na vistoria.${totalLaudo ? ` Em branco: área total do laudo (${num(totalLaudo)} m²) menos os blocos medidos.` : ' Em branco: o corpo principal fica com o restante da área do cadastro.'}`}
                   onBlur={(e) => {
                     const v = lerArea(e.target.value)
                     if (v === null || (Number.isFinite(v) && v >= 0)) aoMudar({ ...caso, classificacao: { ...caso.classificacao, area_principal_m2: v || null } })
@@ -281,7 +285,7 @@ function Blocos({ caso, municipio, aoMudar }: { caso: Caso; municipio: Municipio
         )}
         {diverge && (
           <span className="aviso">
-            Vistoria: {num(vistoria!)} m² × cadastro: {num(construida!)} m². No cálculo, cada área é multiplicada por {num(construida! / vistoria!, 4)}
+            Vistoria: {num(vistoria!)} m²{doLaudo != null && ' (área total do laudo)'} × cadastro: {num(construida!)} m². No cálculo, cada área é multiplicada por {num(construida! / vistoria!, 4)}
             {' '}(detalhe na memória de cálculo, passo 4); o requerimento só menciona a divergência.
           </span>
         )}

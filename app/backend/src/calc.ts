@@ -119,7 +119,11 @@ export function simular(caso: Caso, perfil: PerfilMunicipio, c: Cenario): Simula
   if (area == null) throw new Error('falta a área construída');
   if (vvt == null) throw new Error('falta o valor venal do terreno');
   const medidas = acessoriasValidas(c.acessorias, perfil);
-  const principalMedido = caso.classificacao.area_principal_m2 ?? null;
+  // corpo principal medido: o digitado; senão, o total do laudo menos os blocos medidos
+  const somaBlocos = r2(medidas.reduce((t, b) => t + b.area_m2!, 0));
+  const totalLaudo = caso.laudo?.area_util_m2 ?? null;
+  const doLaudo = caso.classificacao.area_principal_m2 == null && totalLaudo != null && medidas.length > 0 && totalLaudo > somaBlocos;
+  const principalMedido = caso.classificacao.area_principal_m2 ?? (doLaudo ? r2(totalLaudo! - somaBlocos) : null);
   const areaVistoria = principalMedido && principalMedido > 0 ? r2(principalMedido + medidas.reduce((t, b) => t + b.area_m2!, 0)) : null;
   const fator = areaVistoria != null && Math.abs(areaVistoria - area) >= 0.01 ? area / areaVistoria : 1;
   const acessorias = medidas.map((b) => ({ ...b, area_m2: r2(b.area_m2! * fator) }));
@@ -166,6 +170,7 @@ export function simular(caso: Caso, perfil: PerfilMunicipio, c: Cenario): Simula
   );
   const f4 = (x: number) => x.toLocaleString('pt-BR', { minimumFractionDigits: 4, maximumFractionDigits: 4 });
   const memoria_ajuste = ajuste ? [
+    ...(doLaudo ? [`Corpo principal medido: ${num(totalLaudo!)} m² (área total do laudo) − ${num(somaBlocos)} m² dos blocos medidos = ${num(principalMedido!)} m².`] : []),
     `Área medida na vistoria: ${ajuste.blocos.map((b) => num(b.medida)).join(' + ')} = ${num(ajuste.area_vistoria)} m²; área construída do cadastro: ${num(area)} m² (${pct(area / ajuste.area_vistoria - 1).replace(/^(?!-)/, '+')}). Vale a do cadastro.`,
     `Fator de ajuste das áreas: ${num(area)} ÷ ${num(ajuste.area_vistoria)} = ${f4(fator)}.`,
     ...ajuste.blocos.map((b, i) => `${b.descricao}: ${num(b.medida)} m² × ${f4(fator)} ${i ? '=' : '≈'} ${num(b.ajustada)} m²${i ? '' : ' (área do cadastro menos os demais blocos)'}.`),
